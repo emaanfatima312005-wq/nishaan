@@ -24,3 +24,1122 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* ========================================================= */
+/* NISHAAN HERO MAP ANIMATIONS */
+/* ========================================================= */
+
+
+/* --------------------------------------------------------- */
+/* MAP OUTLINE */
+/* --------------------------------------------------------- */
+
+.pakistan-map {
+  opacity: 0;
+  transform-origin: center;
+  animation: mapReveal 2s ease-out 0.4s forwards;
+}
+
+
+@keyframes mapReveal {
+
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  60% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* MAP NETWORK */
+/* --------------------------------------------------------- */
+
+.map-network path {
+  fill: none;
+  stroke: #5FAF5F;
+  stroke-width: 1.2;
+  stroke-dasharray: 7 9;
+  opacity: 0;
+
+  animation:
+    networkReveal 2s ease-out 1.4s forwards,
+    networkFlow 8s linear 3s infinite;
+}
+
+
+@keyframes networkReveal {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.65;
+  }
+
+}
+
+
+@keyframes networkFlow {
+
+  to {
+    stroke-dashoffset: -120;
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* LOCATION NODES */
+/* --------------------------------------------------------- */
+
+.location-nodes circle {
+  fill: #5FAF5F;
+  filter: drop-shadow(0 0 8px rgba(95, 175, 95, 0.9));
+
+  opacity: 0;
+
+  animation:
+    nodeReveal 0.5s ease-out forwards,
+    nodePulse 2.5s ease-in-out infinite;
+}
+
+
+.location-nodes circle:nth-child(1) {
+  animation-delay: 1.7s, 3s;
+}
+
+.location-nodes circle:nth-child(2) {
+  animation-delay: 1.9s, 3.4s;
+}
+
+.location-nodes circle:nth-child(3) {
+  animation-delay: 2.1s, 3.8s;
+}
+
+.location-nodes circle:nth-child(4) {
+  animation-delay: 2.3s, 4.2s;
+}
+
+.location-nodes circle:nth-child(5) {
+  animation-delay: 2.5s, 4.6s;
+}
+
+.location-nodes circle:nth-child(6) {
+  animation-delay: 2.7s, 5s;
+}
+
+.location-nodes circle:nth-child(7) {
+  animation-delay: 2.9s, 5.4s;
+}
+
+.location-nodes circle:nth-child(8) {
+  animation-delay: 3.1s, 5.8s;
+}
+
+.location-nodes circle:nth-child(9) {
+  animation-delay: 3.3s, 6.2s;
+}
+
+
+@keyframes nodeReveal {
+
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+}
+
+
+@keyframes nodePulse {
+
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* PARTICLES */
+/* --------------------------------------------------------- */
+
+.map-particle {
+
+  position: absolute;
+
+  width: 4px;
+  height: 4px;
+
+  border-radius: 50%;
+
+  background: #5FAF5F;
+
+  box-shadow:
+    0 0 8px rgba(95, 175, 95, 0.8),
+    0 0 18px rgba(95, 175, 95, 0.4);
+
+  opacity: 0;
+
+  animation:
+    particleAppear 1s ease-out forwards,
+    particleFloat 5s ease-in-out infinite;
+
+}
+
+
+@keyframes particleAppear {
+
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+}
+
+
+@keyframes particleFloat {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(8px, -12px);
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* MAP CONTOURS */
+/* --------------------------------------------------------- */
+
+.map-contours {
+
+  background-image:
+    repeating-radial-gradient(
+      ellipse at center,
+      transparent 0px,
+      transparent 28px,
+      rgba(47, 107, 47, 0.12) 30px,
+      transparent 32px
+    );
+
+  animation: contourMove 12s linear infinite;
+
+}
+
+
+@keyframes contourMove {
+
+  0% {
+    transform: scale(0.9) rotate(0deg);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: scale(1.05) rotate(2deg);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(0.9) rotate(0deg);
+    opacity: 0.2;
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* LOCATION SCAN RINGS */
+/* --------------------------------------------------------- */
+
+.scan-ring {
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  border: 2px solid rgba(95, 175, 95, 0.55);
+
+  pointer-events: none;
+
+}
+
+
+.ring-one {
+
+  width: 110px;
+  height: 110px;
+
+  animation: scanPulse 4s ease-out infinite;
+
+}
+
+
+.ring-two {
+
+  width: 110px;
+  height: 110px;
+
+  animation: scanPulse 4s ease-out 1.3s infinite;
+
+}
+
+
+.ring-three {
+
+  width: 110px;
+  height: 110px;
+
+  animation: scanPulse 4s ease-out 2.6s infinite;
+
+}
+
+
+@keyframes scanPulse {
+
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(5);
+    opacity: 0;
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* SEARCHING SWEEP */
+/* --------------------------------------------------------- */
+
+.search-sweep {
+
+  position: absolute;
+
+  left: 10%;
+  right: 10%;
+
+  height: 3px;
+
+  top: 20%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #C8E6C9,
+    #5FAF5F,
+    #C8E6C9,
+    transparent
+  );
+
+  box-shadow:
+    0 0 15px #5FAF5F,
+    0 0 35px #5FAF5F;
+
+  animation: sweepMap 2.2s ease-in-out infinite;
+
+}
+
+
+@keyframes sweepMap {
+
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(420px);
+    opacity: 0;
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* PIN FLOAT */
+/* --------------------------------------------------------- */
+
+.map-searching .relative.z-20 {
+
+  animation: pinSearch 1.2s ease-in-out infinite;
+
+}
+
+
+@keyframes pinSearch {
+
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-10px) scale(1.05);
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* DATA CARDS */
+/* --------------------------------------------------------- */
+
+.glass-data-card {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 16px 20px;
+
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.72);
+
+  backdrop-filter: blur(14px);
+
+  border: 1px solid rgba(200, 230, 201, 0.8);
+
+  box-shadow:
+    0 15px 40px rgba(13, 59, 13, 0.08);
+
+  color: #0D3B0D;
+
+  animation: floatingCard 4s ease-in-out infinite;
+
+}
+
+
+.glass-data-card svg {
+
+  font-size: 26px;
+
+  color: #2F6B2F;
+
+}
+
+
+.glass-data-card strong {
+
+  display: block;
+
+  font-size: 24px;
+
+  line-height: 1;
+
+}
+
+
+.glass-data-card span {
+
+  display: block;
+
+  margin-top: 5px;
+
+  font-size: 12px;
+
+  color: rgba(26, 26, 26, 0.65);
+
+}
+
+
+@keyframes floatingCard {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+}
+
+
+/* --------------------------------------------------------- */
+/* TECHNICAL LABEL */
+/* --------------------------------------------------------- */
+
+.vertical-tech-label {
+
+  writing-mode: vertical-rl;
+
+  letter-spacing: 0.25em;
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  color: rgba(47, 107, 47, 0.45);
+
+}
+
+
+/* --------------------------------------------------------- */
+/* REDUCED MOTION */
+/* --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+
+    animation-duration: 0.01ms !important;
+
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+
+  }
+
+}
+/* ========================================= */
+/* NISHAAN MAP ANIMATIONS */
+/* ========================================= */
+
+@keyframes mapFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-mapFloat {
+  animation: mapFloat 5s ease-in-out infinite;
+}
+
+
+/* ========================================= */
+/* LOCATION PIN */
+/* ========================================= */
+
+@keyframes pinFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.animate-pinFloat {
+  animation: pinFloat 2.8s ease-in-out infinite;
+}
+
+
+/* ========================================= */
+/* NETWORK NODES */
+/* ========================================= */
+
+@keyframes nodePulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
+.animate-nodePulse {
+  animation: nodePulse 2.5s ease-in-out infinite;
+}
+
+
+/* ========================================= */
+/* SCANNING LINE */
+/* ========================================= */
+
+@keyframes scanLine {
+  0% {
+    transform: translateY(-180px);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(180px);
+    opacity: 0;
+  }
+}
+
+.animate-scanLine {
+  animation: scanLine 2.2s ease-in-out forwards;
+}
+/* ========================================================= */
+/* NISHAAN HERO ANIMATIONS */
+/* ========================================================= */
+
+@keyframes mapFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-map-float {
+  animation: mapFloat 6s ease-in-out infinite;
+}
+
+
+/* ================= MAP GLOW ================= */
+
+@keyframes mapGlow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+.animate-map-glow {
+  animation: mapGlow 4s ease-in-out infinite;
+}
+
+
+/* ================= ORBITS ================= */
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-orbit {
+  animation: orbit 30s linear infinite;
+}
+
+
+@keyframes orbitReverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-orbit-reverse {
+  animation: orbitReverse 45s linear infinite;
+}
+
+
+/* ================= SCANNING LINE ================= */
+
+@keyframes mapScan {
+  0% {
+    top: 18%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 80%;
+    opacity: 0;
+  }
+}
+
+.animate-map-scan {
+  animation: mapScan 4s ease-in-out infinite;
+}
+
+
+/* ================= SCAN GLOW ================= */
+
+@keyframes scanGlow {
+  0% {
+    top: 14%;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    top: 72%;
+    opacity: 0;
+  }
+}
+
+.animate-scan-glow {
+  animation: scanGlow 4s ease-in-out infinite;
+}
+
+
+/* ================= PIN ================= */
+
+@keyframes pinFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+.animate-pin-float {
+  animation: pinFloat 3s ease-in-out infinite;
+}
+
+
+/* ================= LOCATION PULSE ================= */
+
+@keyframes locationPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-location-pulse {
+  animation: locationPulse 3s ease-out infinite;
+}
+
+
+.animate-location-pulse-delay {
+  animation: locationPulse 3s ease-out 1.2s infinite;
+}
+
+
+/* ================= DATA CARDS ================= */
+
+@keyframes dataFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-data-float {
+  animation: dataFloat 5s ease-in-out infinite;
+}
+
+
+@keyframes dataFloatReverse {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+.animate-data-float-reverse {
+  animation: dataFloatReverse 6s ease-in-out infinite;
+}
+/* ========================================================= */
+/* NISHAAN GEOSPATIAL NETWORK */
+/* ========================================================= */
+
+
+/* ================= NODE PULSE ================= */
+
+@keyframes nodePulse {
+
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  35% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+
+}
+
+.animate-node-pulse {
+  animation: nodePulse 2.8s ease-out infinite;
+}
+
+
+/* ================= NODE GLOW ================= */
+
+@keyframes nodeGlow {
+
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.5);
+  }
+
+}
+
+.animate-node-glow {
+  animation: nodeGlow 2.4s ease-in-out infinite;
+}
+
+
+/* ================= NETWORK LINES ================= */
+
+.network-line {
+
+  stroke: #5FAF5F;
+
+  stroke-width: 0.3;
+
+  stroke-opacity: 0.35;
+
+  stroke-dasharray: 2 2;
+
+  filter: drop-shadow(0 0 2px #5FAF5F);
+
+  animation: networkFlow 3s linear infinite;
+
+}
+
+
+@keyframes networkFlow {
+
+  from {
+    stroke-dashoffset: 10;
+    stroke-opacity: 0.2;
+  }
+
+  50% {
+    stroke-opacity: 0.8;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+    stroke-opacity: 0.2;
+  }
+
+}
+
+
+/* ================= TRAVELING PARTICLES ================= */
+
+.data-particle {
+
+  position: absolute;
+
+  width: 5px;
+
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: #5FAF5F;
+
+  box-shadow:
+    0 0 6px #5FAF5F,
+    0 0 14px #5FAF5F;
+
+  opacity: 0;
+
+}
+
+
+/* Particle 1 */
+
+.particle-1 {
+
+  left: 35%;
+
+  top: 23%;
+
+  animation: particleTravel1 5s linear infinite;
+
+}
+
+
+/* Particle 2 */
+
+.particle-2 {
+
+  left: 50%;
+
+  top: 42%;
+
+  animation: particleTravel2 6s linear 1.2s infinite;
+
+}
+
+
+/* Particle 3 */
+
+.particle-3 {
+
+  left: 32%;
+
+  top: 51%;
+
+  animation: particleTravel3 5.5s linear 2s infinite;
+
+}
+
+
+/* Particle 4 */
+
+.particle-4 {
+
+  left: 38%;
+
+  top: 63%;
+
+  animation: particleTravel4 6s linear 3s infinite;
+
+}
+
+
+/* ================= PARTICLE PATH 1 ================= */
+
+@keyframes particleTravel1 {
+
+  0% {
+    left: 35%;
+    top: 23%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    left: 50%;
+    top: 42%;
+    opacity: 1;
+  }
+
+  90% {
+    left: 67%;
+    top: 53%;
+    opacity: 1;
+  }
+
+  100% {
+    left: 67%;
+    top: 53%;
+    opacity: 0;
+  }
+
+}
+
+
+/* ================= PARTICLE PATH 2 ================= */
+
+@keyframes particleTravel2 {
+
+  0% {
+    left: 50%;
+    top: 42%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  45% {
+    left: 56%;
+    top: 57%;
+    opacity: 1;
+  }
+
+  85% {
+    left: 49%;
+    top: 67%;
+    opacity: 1;
+  }
+
+  100% {
+    left: 49%;
+    top: 67%;
+    opacity: 0;
+  }
+
+}
+
+
+/* ================= PARTICLE PATH 3 ================= */
+
+@keyframes particleTravel3 {
+
+  0% {
+    left: 32%;
+    top: 51%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    left: 45%;
+    top: 53%;
+    opacity: 1;
+  }
+
+  90% {
+    left: 59%;
+    top: 65%;
+    opacity: 1;
+  }
+
+  100% {
+    left: 59%;
+    top: 65%;
+    opacity: 0;
+  }
+
+}
+
+
+/* ================= PARTICLE PATH 4 ================= */
+
+@keyframes particleTravel4 {
+
+  0% {
+    left: 38%;
+    top: 63%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    left: 49%;
+    top: 67%;
+    opacity: 1;
+  }
+
+  90% {
+    left: 54%;
+    top: 77%;
+    opacity: 1;
+  }
+
+  100% {
+    left: 54%;
+    top: 77%;
+    opacity: 0;
+  }
+
+}

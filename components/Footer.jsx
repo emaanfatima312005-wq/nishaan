@@ -239,21 +239,18 @@ export default function Footer() {
               </Link>
 
               <Link
-                href="/terms"
-                className="flex items-center gap-3 text-[#C8E6C9]
-                hover:text-white hover:translate-x-2
-                transition-all duration-300"
-              >
-                <span className="text-[#5FAF5F] text-lg">→</span>
-                Terms of Service
-              </Link>
+  href="/terms-and-conditions"
+  className="flex items-center gap-3 text-[#C8E6C9] hover:text-white hover:translate-x-2 transition-all duration-300"
+>
+  <span className="text-[#5FAF5F] text-lg">→</span>
+  Terms & Conditions
+  </Link>
 
-              <Link
-                href="#"
-                className="flex items-center gap-3 text-[#C8E6C9]
-                hover:text-white hover:translate-x-2
-                transition-all duration-300"
-              >
+             <Link
+             href="#"
+              className="flex items-center gap-3 text-[#C8E6C9] hover:text-white hover:translate-x-2 transition-all duration-300"
+>
+
                 <span className="text-[#5FAF5F] text-lg">→</span>
                 FAQs
               </Link>

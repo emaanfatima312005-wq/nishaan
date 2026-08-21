@@ -21,13 +21,14 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 text-white transition-all duration-500 ${
+      className={`sticky top-0 z-50 text-[#1A1A1A] transition-all duration-500 ${
         scrolled
-          ? "bg-[#0D3B0D]/95 backdrop-blur-md shadow-lg"
-          : "bg-[#0D3B0D] shadow-md"
+          ? "bg-[#fbfcf7]/95 backdrop-blur-md shadow-lg"
+          : "bg-[#fbfcf7] shadow-md"
       }`}
     >
       <div className="max-w-[1400px] mx-auto px-8 lg:px-14">
+
         <div
           className={`flex items-center justify-between transition-all duration-500 ${
             scrolled ? "h-16" : "h-24"
@@ -35,10 +36,12 @@ export default function Navbar() {
         >
 
           {/* ================= LOGO ================= */}
+
           <Link
             href="/"
             className="flex items-center gap-4 group"
           >
+
             <Image
               src="/images/logo.png"
               alt="Nishaan Logo"
@@ -49,8 +52,9 @@ export default function Navbar() {
             />
 
             <div className="leading-tight">
+
               <span
-                className={`block font-bold tracking-widest transition-all duration-500 ${
+                className={`block font-bold tracking-widest text-[#0D3B0D] transition-all duration-500 ${
                   scrolled ? "text-xl" : "text-2xl"
                 }`}
               >
@@ -58,50 +62,55 @@ export default function Navbar() {
               </span>
 
               <span
-                className={`block text-[#C8E6C9] transition-all duration-500 ${
-                  scrolled
-                    ? "text-[8px]"
-                    : "text-[10px]"
+                className={`block text-[#2F6B2F] transition-all duration-500 ${
+                  scrolled ? "text-[8px]" : "text-[10px]"
                 }`}
               >
                 AI-Powered Geospatial Verification
               </span>
+
             </div>
+
           </Link>
 
+
           {/* ================= NAVIGATION ================= */}
+
           <div className="hidden md:flex items-center gap-10">
 
             <Link
               href="/"
-              className="relative text-sm font-medium py-2 transition-colors duration-300 hover:text-[#5FAF5F] group"
+              className="relative text-sm font-medium py-2 text-[#1A1A1A] transition-colors duration-300 hover:text-[#2F6B2F] group"
             >
               Home
 
               <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-[#5FAF5F] transition-all duration-300 group-hover:w-full" />
             </Link>
 
+
             <Link
               href="/how-it-works"
-              className="relative text-sm font-medium py-2 transition-colors duration-300 hover:text-[#5FAF5F] group"
+              className="relative text-sm font-medium py-2 text-[#1A1A1A] transition-colors duration-300 hover:text-[#2F6B2F] group"
             >
               How It Works
 
               <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-[#5FAF5F] transition-all duration-300 group-hover:w-full" />
             </Link>
 
+
             <Link
               href="/explore"
-              className="relative text-sm font-medium py-2 transition-colors duration-300 hover:text-[#5FAF5F] group"
+              className="relative text-sm font-medium py-2 text-[#1A1A1A] transition-colors duration-300 hover:text-[#2F6B2F] group"
             >
               Explore
 
               <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-[#5FAF5F] transition-all duration-300 group-hover:w-full" />
             </Link>
 
+
             <Link
               href="/about"
-              className="relative text-sm font-medium py-2 transition-colors duration-300 hover:text-[#5FAF5F] group"
+              className="relative text-sm font-medium py-2 text-[#1A1A1A] transition-colors duration-300 hover:text-[#2F6B2F] group"
             >
               About
 
@@ -110,15 +119,18 @@ export default function Navbar() {
 
           </div>
 
+
           {/* ================= MOBILE BUTTON ================= */}
+
           <button
-            className="md:hidden text-2xl text-white"
+            className="md:hidden text-2xl text-[#0D3B0D]"
             aria-label="Open menu"
           >
             ☰
           </button>
 
         </div>
+
       </div>
     </nav>
   );

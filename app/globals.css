@@ -1143,3 +1143,25 @@ body {
   }
 
 }
+/* ================= VOICE FREQUENCY ================= */
+
+@keyframes frequency {
+
+  0% {
+    transform: scaleY(0.35);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+
+  100% {
+    transform: scaleY(0.35);
+  }
+
+}
+
+.animate-frequency {
+  animation: frequency 0.8s ease-in-out infinite alternate;
+  transform-origin: center;
+}

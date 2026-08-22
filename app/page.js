@@ -6,9 +6,13 @@ import {
   FiActivity,
   FiTarget,
   FiCompass,
+  FiLayers,
   FiInfo,
   FiSearch,
+  FiImage,
+  FiMic,
   FiGlobe,
+  FiEdit3,
 } from "react-icons/fi";
 
 import Image from "next/image";
@@ -512,165 +516,184 @@ export default function Home() {
 
 
           {/* ================================================= */}
-          {/* FEATURE CARDS */}
-          {/* ================================================= */}
+{/* FEATURE CARDS — IMAGE / VOICE / TEXT */}
+{/* ================================================= */}
 
-          <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+<div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 
+  {/* ================= IMAGE ================= */}
 
-            {/* ================= EXPLORE ================= */}
+  <Link
+    href="/image"
+    className="group relative overflow-hidden rounded-[2rem] bg-[#0D3B0D] p-8 text-white shadow-xl transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl"
+    data-aos="fade-up"
+    data-aos-delay="100"
+  >
 
-            <Link
-              href="/explore"
-              className="group relative overflow-hidden rounded-[2rem] bg-[#0D3B0D] p-8 text-white shadow-xl transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl"
-              data-aos="fade-up"
-              data-aos-delay="100"
-            >
+    {/* Decorative circles */}
 
-              {/* Decorative circle */}
+    <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full border border-[#5FAF5F]/30 transition-transform duration-700 group-hover:scale-150" />
 
-              <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full border border-[#5FAF5F]/30 transition-transform duration-700 group-hover:scale-150" />
+    <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full border border-[#5FAF5F]/20 transition-transform duration-700 group-hover:scale-150" />
 
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full border border-[#5FAF5F]/20 transition-transform duration-700 group-hover:scale-150" />
+    <div className="relative z-10">
 
+      {/* Icon */}
 
-              <div className="relative z-10">
+      <div className="flex items-start justify-between">
 
-                <div className="flex items-start justify-between">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5FAF5F] shadow-lg transition-transform duration-500 group-hover:rotate-6 group-hover:scale-110">
 
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5FAF5F] shadow-lg transition-transform duration-500 group-hover:rotate-6 group-hover:scale-110">
+          <FiImage className="text-3xl text-white" />
 
-                    <FiCompass className="text-3xl text-white" />
+        </div>
 
-                  </div>
+        <FiArrowRight className="text-2xl text-[#5FAF5F] transition-transform duration-500 group-hover:translate-x-2" />
 
-                  <FiArrowRight className="text-2xl text-[#5FAF5F] transition-transform duration-500 group-hover:translate-x-2" />
+      </div>
 
-                </div>
+      {/* Content */}
 
+      <p className="mt-12 text-xs font-bold uppercase tracking-[0.25em] text-[#5FAF5F]">
+        Visual Search
+      </p>
 
-                <p className="mt-12 text-xs font-bold uppercase tracking-[0.25em] text-[#5FAF5F]">
-                  Discover
-                </p>
+      <h3 className="mt-3 text-3xl font-bold">
+        Find With an Image
+      </h3>
 
-                <h3 className="mt-3 text-3xl font-bold">
-                  Explore Nishaan
-                </h3>
+      <p className="mt-4 leading-7 text-[#C8E6C9]">
+        Upload a photo or visual clue and let Nishaan
+        analyze it to discover potential locations.
+      </p>
 
-                <p className="mt-4 leading-7 text-[#C8E6C9]">
-                  Step inside the idea behind Nishaan and discover
-                  what makes this geospatial system different.
-                </p>
+      <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-white">
 
-                <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-white">
-                  Start exploring
-                  <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
-                </div>
+        Explore Image Search
 
-              </div>
+        <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
 
-            </Link>
+      </div>
 
+    </div>
 
-            {/* ================= HOW IT WORKS ================= */}
-
-            <Link
-              href="/how-it-works"
-              className="group relative overflow-hidden rounded-[2rem] border border-[#C8E6C9] bg-white p-8 shadow-lg transition-all duration-500 hover:-translate-y-3 hover:border-[#5FAF5F] hover:shadow-2xl"
-              data-aos="fade-up"
-              data-aos-delay="200"
-            >
-
-              <div className="absolute -right-20 -bottom-20 h-56 w-56 rounded-full bg-[#C8E6C9]/30 transition-transform duration-700 group-hover:scale-125" />
-
-              <div className="relative z-10">
-
-                <div className="flex items-start justify-between">
-
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C8E6C9] transition-all duration-500 group-hover:bg-[#5FAF5F]">
-
-                    <FiActivity className="text-3xl text-[#0D3B0D] transition-colors duration-500 group-hover:text-white" />
-
-                  </div>
-
-                  <FiArrowRight className="text-2xl text-[#2F6B2F] transition-transform duration-500 group-hover:translate-x-2" />
-
-                </div>
+  </Link>
 
 
-                <p className="mt-12 text-xs font-bold uppercase tracking-[0.25em] text-[#5FAF5F]">
-                  Technology
-                </p>
+  {/* ================= VOICE ================= */}
 
-                <h3 className="mt-3 text-3xl font-bold text-[#0D3B0D]">
-                  How It Works
-                </h3>
+  <Link
+    href="/voice"
+    className="group relative overflow-hidden rounded-[2rem] border border-[#C8E6C9] bg-white p-8 shadow-lg transition-all duration-500 hover:-translate-y-3 hover:border-[#5FAF5F] hover:shadow-2xl"
+    data-aos="fade-up"
+    data-aos-delay="200"
+  >
 
-                <p className="mt-4 leading-7 text-[#1A1A1A]/65">
-                  See how AI, geographic data, visual clues and
-                  spatial search come together to identify places.
-                </p>
+    {/* Decorative shape */}
 
-                <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-[#2F6B2F]">
-                  See the process
-                  <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
-                </div>
+    <div className="absolute -right-20 -bottom-20 h-56 w-56 rounded-full bg-[#C8E6C9]/30 transition-transform duration-700 group-hover:scale-125" />
 
-              </div>
+    <div className="relative z-10">
 
-            </Link>
+      {/* Icon */}
+
+      <div className="flex items-start justify-between">
+
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C8E6C9] transition-all duration-500 group-hover:bg-[#5FAF5F]">
+
+          <FiMic className="text-3xl text-[#0D3B0D] transition-colors duration-500 group-hover:text-white" />
+
+        </div>
+
+        <FiArrowRight className="text-2xl text-[#2F6B2F] transition-transform duration-500 group-hover:translate-x-2" />
+
+      </div>
+
+      {/* Content */}
+
+      <p className="mt-12 text-xs font-bold uppercase tracking-[0.25em] text-[#5FAF5F]">
+        Voice Search
+      </p>
+
+      <h3 className="mt-3 text-3xl font-bold text-[#0D3B0D]">
+        Describe It With Your Voice
+      </h3>
+
+      <p className="mt-4 leading-7 text-[#1A1A1A]/65">
+        Tell Nishaan what you remember about a place
+        naturally and let AI turn your words into location clues.
+      </p>
+
+      <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-[#2F6B2F]">
+
+        Try Voice Search
+
+        <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+
+      </div>
+
+    </div>
+
+  </Link>
 
 
-            {/* ================= ABOUT ================= */}
+  {/* ================= TEXT ================= */}
 
-            <Link
-              href="/about"
-              className="group relative overflow-hidden rounded-[2rem] border border-[#C8E6C9] bg-white p-8 shadow-lg transition-all duration-500 hover:-translate-y-3 hover:border-[#5FAF5F] hover:shadow-2xl"
-              data-aos="fade-up"
-              data-aos-delay="300"
-            >
+  <Link
+    href="/text"
+    className="group relative overflow-hidden rounded-[2rem] border border-[#C8E6C9] bg-white p-8 shadow-lg transition-all duration-500 hover:-translate-y-3 hover:border-[#5FAF5F] hover:shadow-2xl"
+    data-aos="fade-up"
+    data-aos-delay="300"
+  >
 
-              <div className="absolute -left-20 -top-20 h-56 w-56 rounded-full bg-[#C8E6C9]/25 transition-transform duration-700 group-hover:scale-125" />
+    {/* Decorative shape */}
 
-              <div className="relative z-10">
+    <div className="absolute -left-20 -top-20 h-56 w-56 rounded-full bg-[#C8E6C9]/25 transition-transform duration-700 group-hover:scale-125" />
 
-                <div className="flex items-start justify-between">
+    <div className="relative z-10">
 
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0D3B0D] transition-transform duration-500 group-hover:scale-110">
+      {/* Icon */}
 
-                    <FiInfo className="text-3xl text-[#5FAF5F]" />
+      <div className="flex items-start justify-between">
 
-                  </div>
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0D3B0D] transition-transform duration-500 group-hover:scale-110">
 
-                  <FiArrowRight className="text-2xl text-[#2F6B2F] transition-transform duration-500 group-hover:translate-x-2" />
+          <FiEdit3 className="text-3xl text-[#5FAF5F]" />
 
-                </div>
+        </div>
 
+        <FiArrowRight className="text-2xl text-[#2F6B2F] transition-transform duration-500 group-hover:translate-x-2" />
 
-                <p className="mt-12 text-xs font-bold uppercase tracking-[0.25em] text-[#5FAF5F]">
-                  The Vision
-                </p>
+      </div>
 
-                <h3 className="mt-3 text-3xl font-bold text-[#0D3B0D]">
-                  About Nishaan
-                </h3>
+      {/* Content */}
 
-                <p className="mt-4 leading-7 text-[#1A1A1A]/65">
-                  Learn why Nishaan was created and how it aims
-                  to make location discovery more intuitive.
-                </p>
+      <p className="mt-12 text-xs font-bold uppercase tracking-[0.25em] text-[#5FAF5F]">
+        Text Search
+      </p>
 
-                <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-[#2F6B2F]">
-                  Discover the vision
-                  <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
-                </div>
+      <h3 className="mt-3 text-3xl font-bold text-[#0D3B0D]">
+        Describe What You Remember
+      </h3>
 
-              </div>
+      <p className="mt-4 leading-7 text-[#1A1A1A]/65">
+        Enter any details you remember about a location
+        and let Nishaan search for potential geographic matches.
+      </p>
 
-            </Link>
+      <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-[#2F6B2F]">
 
-          </div>
+        Try Text Search
 
+        <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+
+      </div>
+
+    </div>
+
+  </Link>
+
+</div>
 
           {/* ================================================= */}
           {/* LIVE SYSTEM STRIP */}

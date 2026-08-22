@@ -1,0 +1,13 @@
+class LocationAnalyzer:
+
+    async def analyze_text():
+        ...
+
+    async def analyze_image():
+        ...
+
+    async def analyze_voice():
+        ...
+
+    async def analyze_combined():
+        ...

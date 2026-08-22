@@ -47,7 +47,6 @@ export default function ImageInputPage() {
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files?.[0];
-
     processFile(selectedFile);
   };
 
@@ -57,7 +56,6 @@ export default function ImageInputPage() {
     setDragging(false);
 
     const droppedFile = event.dataTransfer.files?.[0];
-
     processFile(droppedFile);
   };
 
@@ -99,9 +97,56 @@ export default function ImageInputPage() {
   };
 
   return (
-    <main className="min-h-[calc(100vh-96px)] bg-[#fbfcf7] text-[#1A1A1A]">
-      {/* Progress */}
-      <div className="mx-auto max-w-5xl px-5 pt-8 sm:px-8 lg:px-10">
+    <main className="relative min-h-[calc(100vh-96px)] overflow-hidden bg-[#fbfcf7] text-[#1A1A1A]">
+      {/* ================================================= */}
+      {/* BACKGROUND VISUALS */}
+      {/* ================================================= */}
+
+      {/* LEFT — MINAR */}
+      <img
+        src="/images/minar.png"
+        alt=""
+        aria-hidden="true"
+        className="
+    pointer-events-none
+    absolute
+    left-[-100px]
+    top-[100px]
+    z-0
+    h-[calc(100vh-100px)]
+    w-auto
+    max-w-none
+    opacity-[0.10]
+    select-none
+    lg:block
+    hidden
+  "
+      />
+
+      {/* RIGHT — PAKISTAN MAP */}
+      <img
+        src="/images/map.png"
+        alt=""
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          right-[-80px]
+          top-[200px]
+          z-0
+          w-[500px]
+          opacity-[0.07]
+          select-none
+          lg:block
+          hidden
+        "
+      />
+
+      {/* ================================================= */}
+      {/* PROGRESS */}
+      {/* ================================================= */}
+
+      <div className="relative z-10 mx-auto max-w-5xl px-5 pt-8 sm:px-8 lg:px-10">
         <div className="flex items-center">
           <Step number="1" label="Input" active />
 
@@ -115,32 +160,63 @@ export default function ImageInputPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <section className="mx-auto flex min-h-[620px] max-w-4xl flex-col items-center px-5 py-12 sm:px-8 lg:py-16">
+      {/* ================================================= */}
+      {/* MAIN CONTENT */}
+      {/* ================================================= */}
+
+      <section className="relative z-10 mx-auto flex min-h-[620px] max-w-4xl flex-col items-center px-5 py-12 sm:px-8 lg:py-16">
         {/* Heading */}
+
         <div className="mb-8 text-center">
+          {/* Small Label */}
+
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#5FAF5F]">
+            Location Discovery
+          </p>
+
           <h1 className="text-3xl font-semibold tracking-tight text-[#0D3B0D] sm:text-4xl">
             Image Input
           </h1>
 
-          <p className="mt-3 text-sm text-[#1A1A1A]/70 sm:text-base">
-            Upload an image or choose one from your device.
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#1A1A1A]/70 sm:text-base">
+            Upload an image and let Nishaan analyze the visual clues to discover
+            where the place might be.
           </p>
         </div>
 
-        {/* Upload Area */}
+        {/* ================================================= */}
+        {/* UPLOAD AREA */}
+        {/* ================================================= */}
+
         {!preview ? (
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`flex min-h-[310px] w-full max-w-2xl flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 text-center transition-all ${
-              dragging
-                ? "border-[#5FAF5F] bg-[#C8E6C9]"
-                : "border-[#5FAF5F] bg-white"
-            }`}
+            className={`
+              relative
+              flex
+              min-h-[310px]
+              w-full
+              max-w-2xl
+              flex-col
+              items-center
+              justify-center
+              rounded-2xl
+              border-2
+              border-dashed
+              px-6
+              text-center
+              transition-all
+              ${
+                dragging
+                  ? "border-[#5FAF5F] bg-[#C8E6C9]"
+                  : "border-[#5FAF5F] bg-white"
+              }
+            `}
           >
             {/* Upload Icon */}
+
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#C8E6C9]">
               <FiUploadCloud className="text-4xl text-[#2F6B2F]" />
             </div>
@@ -152,10 +228,23 @@ export default function ImageInputPage() {
             <p className="my-2 text-sm text-[#1A1A1A]/60">or</p>
 
             {/* Choose File */}
+
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-lg bg-[#0D3B0D] px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#2F6B2F]"
+              className="
+                rounded-lg
+                bg-[#0D3B0D]
+                px-7
+                py-3
+                text-sm
+                font-semibold
+                text-white
+                shadow-sm
+                transition
+                hover:bg-[#2F6B2F]
+                active:scale-[0.98]
+              "
             >
               Choose File
             </button>
@@ -173,7 +262,10 @@ export default function ImageInputPage() {
             </p>
           </div>
         ) : (
-          /* Selected Image */
+          /* ================================================= */
+          /* SELECTED IMAGE */
+          /* ================================================= */
+
           <div className="w-full max-w-2xl rounded-2xl border border-[#C8E6C9] bg-white p-4 shadow-sm sm:p-6">
             <div className="relative overflow-hidden rounded-xl bg-[#C8E6C9]">
               <img
@@ -183,10 +275,26 @@ export default function ImageInputPage() {
               />
 
               {/* Remove */}
+
               <button
                 type="button"
                 onClick={removeFile}
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1A1A1A] shadow transition hover:bg-[#C8E6C9]"
+                className="
+                  absolute
+                  right-3
+                  top-3
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                  text-[#1A1A1A]
+                  shadow
+                  transition
+                  hover:bg-[#C8E6C9]
+                "
                 aria-label="Remove image"
               >
                 <FiX />
@@ -194,6 +302,7 @@ export default function ImageInputPage() {
             </div>
 
             {/* File Information */}
+
             <div className="mt-4 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C8E6C9]">
                 <FiImage className="text-[#2F6B2F]" />
@@ -212,19 +321,39 @@ export default function ImageInputPage() {
           </div>
         )}
 
-        {/* Error */}
+        {/* ================================================= */}
+        {/* ERROR */}
+        {/* ================================================= */}
+
         {error && (
           <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
             {error}
           </p>
         )}
 
-        {/* Analyze Button */}
+        {/* ================================================= */}
+        {/* ANALYZE BUTTON */}
+        {/* ================================================= */}
+
         {preview && (
           <button
             type="button"
             onClick={continueToAnalysis}
-            className="mt-7 flex items-center gap-2 rounded-lg bg-[#0D3B0D] px-7 py-3 font-semibold text-white transition hover:bg-[#2F6B2F]"
+            className="
+              mt-7
+              flex
+              items-center
+              gap-2
+              rounded-lg
+              bg-[#0D3B0D]
+              px-7
+              py-3
+              font-semibold
+              text-white
+              transition
+              hover:bg-[#2F6B2F]
+              active:scale-[0.98]
+            "
           >
             Analyze Image
             <FiArrowRight />
@@ -235,22 +364,37 @@ export default function ImageInputPage() {
   );
 }
 
-/* Progress Step */
+/* ================================================= */
+/* PROGRESS STEP */
+/* ================================================= */
+
 function Step({ number, label, active = false }) {
   return (
     <div className="flex min-w-0 flex-col items-center">
       <div
-        className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-          active ? "bg-[#0D3B0D] text-white" : "bg-[#C8E6C9] text-[#2F6B2F]"
-        }`}
+        className={`
+          flex
+          h-8
+          w-8
+          items-center
+          justify-center
+          rounded-full
+          text-xs
+          font-bold
+          ${active ? "bg-[#0D3B0D] text-white" : "bg-[#C8E6C9] text-[#2F6B2F]"}
+        `}
       >
         {number}
       </div>
 
       <span
-        className={`mt-2 text-[11px] font-medium sm:text-xs ${
-          active ? "text-[#0D3B0D]" : "text-[#1A1A1A]/60"
-        }`}
+        className={`
+          mt-2
+          text-[11px]
+          font-medium
+          sm:text-xs
+          ${active ? "text-[#0D3B0D]" : "text-[#1A1A1A]/60"}
+        `}
       >
         {label}
       </span>
@@ -258,13 +402,21 @@ function Step({ number, label, active = false }) {
   );
 }
 
-/* Progress Line */
+/* ================================================= */
+/* PROGRESS LINE */
+/* ================================================= */
+
 function Line({ active = false }) {
   return (
     <div
-      className={`mx-2 mb-6 h-[2px] flex-1 sm:mx-4 ${
-        active ? "bg-[#2F6B2F]" : "bg-[#C8E6C9]"
-      }`}
+      className={`
+        mx-2
+        mb-6
+        h-[2px]
+        flex-1
+        sm:mx-4
+        ${active ? "bg-[#2F6B2F]" : "bg-[#C8E6C9]"}
+      `}
     />
   );
 }

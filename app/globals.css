@@ -1145,23 +1145,68 @@ body {
 }
 /* ================= VOICE FREQUENCY ================= */
 
-@keyframes frequency {
-
-  0% {
-    transform: scaleY(0.35);
+@keyframes voiceWave {
+  0%,
+  100% {
+    transform: scaleY(0.90);
+    opacity: 0.45;
   }
 
   50% {
     transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-voice-wave {
+  animation: voiceWave 1s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* ========================================= */
+/* ANALYZING PAGE ANIMATIONS */
+/* ========================================= */
+
+@keyframes orbit {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.animate-orbit {
+  animation: orbit 18s linear infinite;
+}
+
+
+@keyframes scan-beam {
+  0% {
+    transform: translate(-50%, -100%) rotate(-90deg);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translate(-50%, -100%) rotate(90deg);
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
   }
 
   100% {
-    transform: scaleY(0.35);
+    transform: translate(-50%, -100%) rotate(270deg);
+    opacity: 0;
   }
-
 }
 
-.animate-frequency {
-  animation: frequency 0.8s ease-in-out infinite alternate;
-  transform-origin: center;
+.animate-scan-beam {
+  animation: scan-beam 4s linear infinite;
 }

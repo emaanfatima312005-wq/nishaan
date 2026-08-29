@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from database.connection import Base, engine
+from models.database import (
+    LocationRequestDB,
+    LocationResultDB,
+    LandmarkDB,
+)
 
 from routes.location import router as location_router
 from routes.voice import router as voice_router
 
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Nishaan API",

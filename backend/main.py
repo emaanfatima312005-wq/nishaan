@@ -9,7 +9,9 @@ from models.database import (
 
 from routes.location import router as location_router
 from routes.voice import router as voice_router
-
+from routes.image import router as image_router
+from routes.combined import router as combined_router
+from routes.osm_test import router as osm_test_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -44,6 +46,9 @@ app.add_middleware(
 
 app.include_router(location_router)
 app.include_router(voice_router)
+app.include_router(image_router)
+app.include_router(combined_router)
+app.include_router(osm_test_router)
 
 
 # ============================================================

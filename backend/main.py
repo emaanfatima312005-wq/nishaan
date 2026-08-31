@@ -12,6 +12,9 @@ from routes.voice import router as voice_router
 from routes.image import router as image_router
 from routes.combined import router as combined_router
 from routes.osm_test import router as osm_test_router
+from routes.mapillary import (
+    router as mapillary_router,
+)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -49,6 +52,9 @@ app.include_router(voice_router)
 app.include_router(image_router)
 app.include_router(combined_router)
 app.include_router(osm_test_router)
+app.include_router(
+    mapillary_router
+)
 
 
 # ============================================================

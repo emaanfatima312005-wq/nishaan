@@ -101,9 +101,7 @@ export default function PrivacyPolicy() {
 
             <h3 className="font-bold text-[#0D3B0D]">Purpose Driven</h3>
 
-            <p className="mt-2 text-sm leading-6 text-[#1A1A1A]/60">
-              Information is processed to provide Nishaan's core features.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-[#1A1A1A]/60"></p>
           </div>
 
           <div className="bg-white rounded-2xl border border-[#C8E6C9] p-6 shadow-lg">

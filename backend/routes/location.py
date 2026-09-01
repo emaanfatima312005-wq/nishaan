@@ -84,10 +84,13 @@ async def analyze_location(
         province = ai_result.get("province")
         city = ai_result.get("city")
 
-        # Keep AI hierarchy as hints only.
         ai_town = ai_result.get("town")
         ai_area = ai_result.get("area")
         ai_street = ai_result.get("street")
+
+        house_number = ai_result.get(
+            "house_number"
+        )
 
         place_names = (
             ai_result.get("place_names")
@@ -545,23 +548,24 @@ async def analyze_location(
         # ====================================================
 
         return LocationResponse(
-            status="success",
+    status="success",
 
-            province=province,
-            city=city,
-            town=town,
-            area=area,
-            street=street,
+    province=province,
+    city=city,
+    town=town,
+    area=area,
+    street=street,
 
-            place_names=place_names,
+    house_number=house_number,
 
-            landmarks=landmarks,
+    place_names=place_names,
+    landmarks=landmarks,
 
-            latitude=latitude,
-            longitude=longitude,
+    latitude=latitude,
+    longitude=longitude,
 
-            confidence=confidence,
-        )
+    confidence=confidence,
+)
 
     except HTTPException:
         raise

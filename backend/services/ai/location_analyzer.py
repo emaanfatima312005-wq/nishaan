@@ -46,11 +46,6 @@ class LocationAnalyzer:
         """
         Extract location clues from Roman Urdu, Urdu,
         English, or mixed-language descriptions.
-
-        Important:
-        Groq extracts what the user said.
-        It does NOT decide the official administrative
-        hierarchy of ambiguous localities.
         """
 
         if not clue or not clue.strip():
@@ -100,6 +95,7 @@ Return ONLY valid JSON in exactly this structure:
   "town": null,
   "area": null,
   "street": null,
+  "house_number": null,
   "place_names": [],
   "landmarks": [],
   "confidence": 0
@@ -111,11 +107,11 @@ RULES:
 
 2. Extract a province only when the user explicitly names it.
 
-3. Extract a street/road/gali when the wording clearly
+3. Extract a street, road, or gali when the wording clearly
    identifies it as a street, road, or gali.
 
-4. Do NOT decide that a locality is a town or area
-   merely from its name.
+4. Do NOT decide that a locality is a town or area merely
+   from its name.
 
 5. If a named locality could be a town, area, suburb,
    neighbourhood, or locality, put it in "place_names".
@@ -148,20 +144,33 @@ RULES:
     - shop
     - hospital
 
-13. Translate simple descriptive Roman Urdu into concise
-    English when useful.
+13. Translate simple descriptive Roman Urdu landmark
+    phrases into concise English when useful.
 
 14. Preserve actual proper names instead of translating
     them unnecessarily.
 
-15. Do not invent locations.
+15. Extract a house number when the user explicitly
+    provides one.
 
-16. Do not infer a city from a locality.
+16. Preserve the house number exactly as written.
 
-17. Do not infer a province from a city unless the province
-    was explicitly stated.
+Examples:
+- "house 27" -> "27"
+- "ghar no 27" -> "27"
+- "makaan number 27-B" -> "27-B"
+- "house #14" -> "14"
 
-18. confidence must be an integer from 0 to 100.
+17. Never invent a house number.
+
+18. Do not infer a city from a locality.
+
+19. Do not infer a province from a city unless the
+    province was explicitly stated.
+
+20. Do not invent missing location information.
+
+21. confidence must be an integer from 0 to 100.
 
 USER CLUE:
 
@@ -211,7 +220,7 @@ USER CLUE:
                 f"Groq returned invalid JSON: {content}"
             )
 
-        # Guarantee expected arrays exist.
+        # Guarantee expected fields.
         if not isinstance(
             result.get("place_names"),
             list,
@@ -223,6 +232,14 @@ USER CLUE:
             list,
         ):
             result["landmarks"] = []
+
+        if not isinstance(
+            result.get("house_number"),
+            (str, type(None)),
+        ):
+            result["house_number"] = str(
+                result["house_number"]
+            )
 
         result["confidence"] = (
             self._normalize_confidence(
@@ -244,13 +261,6 @@ USER CLUE:
     ):
         """
         Analyze an image for geographic evidence.
-
-        This extracts:
-        - visible text
-        - named landmarks
-        - visual clues
-
-        It does not invent exact coordinates.
         """
 
         if not content_type.startswith("image/"):
@@ -308,6 +318,26 @@ OCR is important.
 
 Try to read visible text exactly.
 
+HOUSE NUMBERS ARE IMPORTANT.
+
+If a house number is clearly visible on:
+- a gate
+- wall
+- door
+- plaque
+- building entrance
+
+extract it exactly into "house_number".
+
+Do NOT confuse:
+- shop numbers
+- phone numbers
+- plot numbers
+- street numbers
+
+with a house number unless the image clearly identifies
+it as a house number.
+
 Do NOT invent:
 - city
 - province
@@ -328,6 +358,7 @@ Return ONLY valid JSON:
   "town": null,
   "area": null,
   "street": null,
+  "house_number": null,
   "place_names": [],
   "landmarks": [],
   "visible_text": [],
@@ -341,7 +372,7 @@ Rules:
 - Exact visible names go into visible_text.
 - Named localities whose administrative level is unclear
   go into place_names.
-- Useful physical/reference landmarks go into landmarks.
+- Useful geographic landmarks go into landmarks.
 - Generic visual observations go into visual_clues.
 - Do not guess missing geographic fields.
 - Maximum 8 place_names.
@@ -408,7 +439,6 @@ Rules:
                 f"Groq returned invalid image JSON: {content}"
             )
 
-        # Guarantee expected arrays.
         for field in [
             "place_names",
             "landmarks",
@@ -420,6 +450,14 @@ Rules:
                 list,
             ):
                 result[field] = []
+
+        if not isinstance(
+            result.get("house_number"),
+            (str, type(None)),
+        ):
+            result["house_number"] = str(
+                result["house_number"]
+            )
 
         result["confidence"] = (
             self._normalize_confidence(
@@ -440,7 +478,7 @@ Rules:
     ):
         """
         Analyze a Whisper transcription using the same
-        text location extraction pipeline.
+        location-analysis pipeline as text.
         """
 
         if not voice or not voice.strip():
@@ -464,10 +502,7 @@ Rules:
         voice: str | None = None,
     ):
         """
-        Analyze text/voice and image together.
-
-        Text and voice provide linguistic geographic clues.
-        Image provides OCR and visual geographic clues.
+        Combine text, voice, and image evidence.
         """
 
         if not text and not image and not voice:
@@ -524,6 +559,7 @@ Return ONLY JSON:
   "town": null,
   "area": null,
   "street": null,
+  "house_number": null,
   "place_names": [],
   "landmarks": [],
   "visual_clues": [],
@@ -535,6 +571,8 @@ Rules:
 
 - Extract explicit information.
 - Do not invent locations.
+- Extract house numbers when explicitly provided.
+- Preserve house numbers exactly.
 - Ambiguous named localities go into place_names.
 - Do not force ambiguous localities into town or area.
 - confidence must be 0-100.
@@ -584,7 +622,7 @@ Rules:
 You are Nishaan, an AI geographic reasoning system
 for difficult location identification in Pakistan.
 
-Use BOTH sources:
+Use BOTH textual and visual evidence.
 
 TEXT / VOICE:
 
@@ -594,41 +632,47 @@ IMAGE:
 
 Analyze the image carefully.
 
-Extract:
+Look for:
 
-- explicit city names
-- explicit province names
-- named localities
-- street names
+- house numbers
 - road names
+- street names
 - gali names
+- signs
+- Urdu text
+- English text
+- shop names
 - mosque names
 - market names
-- shop names
 - school names
+- building names
 - other landmarks
-- visible Urdu/English text
-- useful visual clues
 
-IMPORTANT:
+HOUSE NUMBERS ARE IMPORTANT.
 
-The user does NOT need to provide every administrative
-level.
+If a house number is explicitly mentioned in text
+or clearly visible in the image, preserve it exactly.
 
-If a locality is mentioned but its administrative level
-is ambiguous, preserve it in place_names instead of
-guessing town or area.
+Do not confuse house numbers with:
+- phone numbers
+- shop numbers
+- plot numbers
+- street numbers
 
-For example:
+Use textual evidence to establish location context.
 
-Sadiqabad
-Muslim Town
-Saddar
-Chaklala
+Use the image to confirm or add evidence.
 
-may be named geographic localities.
+If a locality is mentioned but its administrative
+level is ambiguous, put it in place_names.
 
-Do not automatically label them as town or area.
+Do not invent:
+- cities
+- provinces
+- streets
+- landmarks
+- coordinates
+- house numbers
 
 Return ONLY valid JSON:
 
@@ -638,6 +682,7 @@ Return ONLY valid JSON:
   "town": null,
   "area": null,
   "street": null,
+  "house_number": null,
   "place_names": [],
   "landmarks": [],
   "visible_text": [],
@@ -649,11 +694,8 @@ Return ONLY valid JSON:
 Rules:
 
 - Use only supported evidence.
-- Do not invent cities.
-- Do not invent streets.
-- Do not invent coordinates.
 - Preserve proper names.
-- Generic appearance is not an exact location.
+- Preserve house numbers exactly.
 - Maximum 8 place_names.
 - Maximum 8 landmarks.
 - Maximum 10 visible_text items.
@@ -734,6 +776,14 @@ Rules:
             ):
                 result[field] = []
 
+        if not isinstance(
+            result.get("house_number"),
+            (str, type(None)),
+        ):
+            result["house_number"] = str(
+                result["house_number"]
+            )
+
         result["confidence"] = (
             self._normalize_confidence(
                 result.get("confidence")
@@ -744,7 +794,7 @@ Rules:
 
 
     # ========================================================
-    # CONFIDENCE
+    # CONFIDENCE NORMALIZER
     # ========================================================
 
     @staticmethod

@@ -17,6 +17,10 @@ from models.database import LocationRequestDB
 from services.ai.location_analyzer import LocationAnalyzer
 from services.exif_service import ExifService
 from services.geoclip_service import GeoCLIPService
+from services.streetclip_service import StreetCLIPService
+from services.location_candidate_service import (
+    LocationCandidateService,
+)
 
 
 router = APIRouter(
@@ -42,18 +46,24 @@ async def analyze_image(
     db: Session = Depends(get_db),
 ):
     """
-    Upload an image and analyze it with:
+    Analyze an uploaded image using:
 
     1. Groq Vision
     2. EXIF GPS
-    3. GeoCLIP image geolocation
+    3. GeoCLIP
+    4. StreetCLIP
+    5. Location Candidate Resolver
 
-    GeoCLIP provides candidate coordinates.
-    EXIF GPS takes priority when available.
+    EXIF GPS is trusted when available.
+
+    Otherwise, model predictions are treated as evidence and
+    passed through the candidate resolver rather than being
+    blindly accepted as the final destination.
     """
 
-    try:
+    location_request = None
 
+    try:
         # ====================================================
         # 1. CHECK IMAGE TYPE
         # ====================================================
@@ -68,7 +78,6 @@ async def analyze_image(
                 ),
             )
 
-
         # ====================================================
         # 2. READ IMAGE
         # ====================================================
@@ -82,7 +91,6 @@ async def analyze_image(
                 detail="Image file is empty.",
             )
 
-
         # ====================================================
         # 3. CHECK IMAGE SIZE
         # ====================================================
@@ -95,7 +103,6 @@ async def analyze_image(
                 status_code=400,
                 detail="Image must be smaller than 20 MB.",
             )
-
 
         # ====================================================
         # 4. SAVE REQUEST
@@ -115,7 +122,6 @@ async def analyze_image(
         db.commit()
         db.refresh(location_request)
 
-
         # ====================================================
         # 5. GROQ VISION
         # ====================================================
@@ -130,38 +136,132 @@ async def analyze_image(
         print(vision_result)
         print("=" * 60)
 
-
         # ====================================================
-        # 6. EXIF GPS
+        # 6. INITIALIZE
         # ====================================================
-
-        exif_location = ExifService.extract_gps(
-            image_bytes
-        )
 
         latitude = None
         longitude = None
 
-        if exif_location:
-
-            latitude = exif_location["latitude"]
-            longitude = exif_location["longitude"]
-
-            print("=" * 60)
-            print("EXIF GPS FOUND")
-            print("Latitude:", latitude)
-            print("Longitude:", longitude)
-            print("=" * 60)
-
-        else:
-
-            print("=" * 60)
-            print("NO EXIF GPS FOUND")
-            print("=" * 60)
-
+        gps_source = None
 
         # ====================================================
-        # 7. GEOCLIP
+        # 7. EXIF GPS
+        # ====================================================
+
+        try:
+
+            exif_location = (
+                ExifService.extract_gps(
+                    image_bytes
+                )
+            )
+
+            if exif_location:
+
+                latitude = exif_location[
+                    "latitude"
+                ]
+
+                longitude = exif_location[
+                    "longitude"
+                ]
+
+                gps_source = "exif"
+
+                print("=" * 60)
+                print("EXIF GPS FOUND")
+                print(
+                    "Latitude:",
+                    latitude,
+                )
+                print(
+                    "Longitude:",
+                    longitude,
+                )
+                print("=" * 60)
+
+            else:
+
+                print("=" * 60)
+                print("NO EXIF GPS FOUND")
+                print("=" * 60)
+
+        except Exception as exif_error:
+
+            print("=" * 60)
+            print("EXIF ERROR")
+            print(
+                "ERROR TYPE:",
+                type(exif_error).__name__,
+            )
+            print(
+                "ERROR:",
+                str(exif_error),
+            )
+            print("=" * 60)
+
+        # ====================================================
+        # 8. STREETCLIP
+        # ====================================================
+
+        streetclip_country = []
+        streetclip_region = []
+        streetclip_city = []
+
+        try:
+
+            streetclip_country = (
+                StreetCLIPService.classify_country(
+                    image_bytes
+                )
+            )
+
+            streetclip_region = (
+                StreetCLIPService.classify_pakistan_region(
+                    image_bytes
+                )
+            )
+
+            streetclip_city = (
+                StreetCLIPService.classify_pakistan_city(
+                    image_bytes
+                )
+            )
+
+            print("=" * 60)
+            print("STREETCLIP COUNTRY")
+            print(
+                streetclip_country
+            )
+
+            print("STREETCLIP REGION")
+            print(
+                streetclip_region
+            )
+
+            print("STREETCLIP CITY")
+            print(
+                streetclip_city
+            )
+            print("=" * 60)
+
+        except Exception as streetclip_error:
+
+            print("=" * 60)
+            print("STREETCLIP ERROR")
+            print(
+                "ERROR TYPE:",
+                type(streetclip_error).__name__,
+            )
+            print(
+                "ERROR:",
+                str(streetclip_error),
+            )
+            print("=" * 60)
+
+        # ====================================================
+        # 9. GEOCLIP
         # ====================================================
 
         geoclip_predictions = []
@@ -171,123 +271,264 @@ async def analyze_image(
             geoclip_predictions = (
                 GeoCLIPService.predict(
                     image_bytes=image_bytes,
-                    filename=image.filename or "image.jpg",
+                    filename=(
+                        image.filename
+                        or "image.jpg"
+                    ),
                     top_k=5,
                 )
             )
 
             print("=" * 60)
             print("GEOCLIP PREDICTIONS")
-            print(geoclip_predictions)
+            print(
+                geoclip_predictions
+            )
             print("=" * 60)
 
         except Exception as geoclip_error:
 
-            # GeoCLIP is an additional signal.
-            # Do not fail the entire image request if it fails.
-
             print("=" * 60)
             print("GEOCLIP ERROR")
             print(
-                type(geoclip_error).__name__
+                "ERROR TYPE:",
+                type(geoclip_error).__name__,
             )
             print(
-                str(geoclip_error)
+                "ERROR:",
+                str(geoclip_error),
             )
             print("=" * 60)
 
-
         # ====================================================
-        # 8. CHOOSE PRIMARY COORDINATES
+        # 10. GEOCLIP BEST CANDIDATE
         # ====================================================
 
-        gps_source = None
+        geoclip_coordinates = None
 
-        if latitude is not None and longitude is not None:
-
-            gps_source = "exif"
-
-        elif geoclip_predictions:
+        if geoclip_predictions:
 
             best_prediction = (
                 geoclip_predictions[0]
             )
 
-            latitude = best_prediction[
-                "latitude"
-            ]
-
-            longitude = best_prediction[
-                "longitude"
-            ]
-
-            gps_source = "geoclip"
-
+            geoclip_coordinates = {
+                "latitude": (
+                    best_prediction.get(
+                        "latitude"
+                    )
+                ),
+                "longitude": (
+                    best_prediction.get(
+                        "longitude"
+                    )
+                ),
+                "probability": (
+                    best_prediction.get(
+                        "probability",
+                        0,
+                    )
+                ),
+            }
 
         # ====================================================
-        # 9. RETURN RESULT
+        # 11. FINAL LOCATION RESOLUTION
+        # ====================================================
+
+        final_location = None
+
+        try:
+
+            final_location = (
+                await LocationCandidateService.resolve_image(
+                    vision_result=vision_result,
+                    geoclip_predictions=(
+                        geoclip_predictions
+                    ),
+                    streetclip={
+                        "country": (
+                            streetclip_country
+                        ),
+                        "region": (
+                            streetclip_region
+                        ),
+                        "city": (
+                            streetclip_city
+                        ),
+                    },
+                )
+            )
+
+            print("=" * 60)
+            print("FINAL LOCATION RESOLUTION")
+            print(
+                final_location
+            )
+            print("=" * 60)
+
+        except Exception as resolver_error:
+
+            print("=" * 60)
+            print("LOCATION CANDIDATE ERROR")
+            print(
+                "ERROR TYPE:",
+                type(resolver_error).__name__,
+            )
+            print(
+                "ERROR:",
+                str(resolver_error),
+            )
+            print("=" * 60)
+
+        # ====================================================
+        # 12. CHOOSE FINAL COORDINATES
+        # ====================================================
+
+        # EXIF always wins because it is actual metadata
+        # attached to the photograph.
+
+        if (
+            latitude is not None
+            and longitude is not None
+        ):
+
+            gps_source = "exif"
+
+        elif final_location:
+
+            resolved_latitude = (
+                final_location.get(
+                    "latitude"
+                )
+            )
+
+            resolved_longitude = (
+                final_location.get(
+                    "longitude"
+                )
+            )
+
+            if (
+                resolved_latitude is not None
+                and resolved_longitude is not None
+            ):
+
+                latitude = (
+                    resolved_latitude
+                )
+
+                longitude = (
+                    resolved_longitude
+                )
+
+                gps_source = (
+                    "candidate_resolver"
+                )
+
+        # ====================================================
+        # 13. FINAL LOCATION FIELDS
+        # ====================================================
+
+        final_province = (
+            final_location.get(
+                "province"
+            )
+            if final_location
+            else vision_result.get(
+                "province"
+            )
+        )
+
+        final_city = (
+            final_location.get(
+                "city"
+            )
+            if final_location
+            else vision_result.get(
+                "city"
+            )
+        )
+
+        final_town = (
+            final_location.get(
+                "town"
+            )
+            if final_location
+            else vision_result.get(
+                "town"
+            )
+        )
+
+        final_area = (
+            final_location.get(
+                "area"
+            )
+            if final_location
+            else vision_result.get(
+                "area"
+            )
+        )
+
+        final_street = (
+            final_location.get(
+                "street"
+            )
+            if final_location
+            else vision_result.get(
+                "street"
+            )
+        )
+
+        final_house_number = (
+            final_location.get(
+                "house_number"
+            )
+            if final_location
+            else vision_result.get(
+                "house_number"
+            )
+        )
+
+        final_confidence = (
+            final_location.get(
+                "confidence"
+            )
+            if final_location
+            else vision_result.get(
+                "confidence",
+                0,
+            )
+        )
+
+        # ====================================================
+        # 14. RETURN FINAL RESULT
         # ====================================================
 
         return {
 
             "status": "success",
 
-            "request_id": location_request.id,
+            "request_id": (
+                location_request.id
+            ),
 
             "filename": image.filename,
 
-            # ------------------------------------------------
-            # AI visual analysis
-            # ------------------------------------------------
+            # =================================================
+            # FINAL LOCATION
+            # =================================================
 
-            "province": vision_result.get(
-                "province"
-            ),
+            "province": final_province,
 
-            "city": vision_result.get(
-                "city"
-            ),
+            "city": final_city,
 
-            "town": vision_result.get(
-                "town"
-            ),
+            "town": final_town,
 
-            "area": vision_result.get(
-                "area"
-            ),
+            "area": final_area,
 
-            "street": vision_result.get(
-                "street"
-            ),
+            "street": final_street,
 
-            "landmarks": vision_result.get(
-                "landmarks",
-                [],
-            ),
-
-            "visible_text": vision_result.get(
-                "visible_text",
-                [],
-            ),
-
-            "visual_clues": vision_result.get(
-                "visual_clues",
-                [],
-            ),
-
-            "description": vision_result.get(
-                "description",
-                "",
-            ),
-
-            "confidence": vision_result.get(
-                "confidence",
-                0,
-            ),
-
-            # ------------------------------------------------
-            # Coordinates
-            # ------------------------------------------------
+            "house_number": final_house_number,
 
             "latitude": latitude,
 
@@ -295,19 +536,89 @@ async def analyze_image(
 
             "gps_source": gps_source,
 
-            # ------------------------------------------------
-            # GeoCLIP candidates
-            # ------------------------------------------------
+            "confidence": final_confidence,
+
+            # =================================================
+            # USER / IMAGE EVIDENCE
+            # =================================================
+
+            "place_names": (
+                vision_result.get(
+                    "place_names",
+                    [],
+                )
+            ),
+
+            "landmarks": (
+                vision_result.get(
+                    "landmarks",
+                    [],
+                )
+            ),
+
+            "visible_text": (
+                vision_result.get(
+                    "visible_text",
+                    [],
+                )
+            ),
+
+            "visual_clues": (
+                vision_result.get(
+                    "visual_clues",
+                    [],
+                )
+            ),
+
+            "description": (
+                vision_result.get(
+                    "description",
+                    "",
+                )
+            ),
+
+            # =================================================
+            # FINAL RESOLVER
+            # =================================================
+
+            "final_location": (
+                final_location
+            ),
+
+            # =================================================
+            # GEOCLIP
+            # =================================================
+
+            "geoclip_coordinates": (
+                geoclip_coordinates
+            ),
 
             "geoclip_predictions": (
                 geoclip_predictions
             ),
-        }
 
+            # =================================================
+            # STREETCLIP
+            # =================================================
+
+            "streetclip": {
+
+                "country": (
+                    streetclip_country
+                ),
+
+                "region": (
+                    streetclip_region
+                ),
+
+                "city": (
+                    streetclip_city
+                ),
+            },
+        }
 
     except HTTPException:
         raise
-
 
     except Exception as e:
 
@@ -315,8 +626,14 @@ async def analyze_image(
 
         print("=" * 60)
         print("IMAGE ANALYSIS ERROR")
-        print("ERROR TYPE:", type(e).__name__)
-        print("ERROR:", str(e))
+        print(
+            "ERROR TYPE:",
+            type(e).__name__,
+        )
+        print(
+            "ERROR:",
+            str(e),
+        )
         print("=" * 60)
 
         raise HTTPException(

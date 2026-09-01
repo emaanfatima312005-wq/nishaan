@@ -1,6 +1,11 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+)
+
 from sqlalchemy.orm import Session
 from geoalchemy2.elements import WKTElement
 
@@ -16,25 +21,47 @@ from models.location import (
     LocationResponse,
 )
 
-from services.ai.location_analyzer import LocationAnalyzer
-from services.location_resolver import LocationResolver
-from services.geocoding_service import GeocodingService
-from services.osm_places_service import OSMPlacesService
+from services.ai.location_analyzer import (
+    LocationAnalyzer,
+)
+
+from services.location_resolver import (
+    LocationResolver,
+)
+
+from services.geocoding_service import (
+    GeocodingService,
+)
+
+from services.osm_places_service import (
+    OSMPlacesService,
+)
+
 from services.location_matching_service import (
     LocationMatchingService,
 )
+
 from services.locality_resolver import (
     LocalityResolver,
 )
 
+
+# ============================================================
+# ROUTER
+# ============================================================
 
 router = APIRouter(
     prefix="/api/location",
     tags=["Location"],
 )
 
+
 analyzer = LocationAnalyzer()
 
+
+# ============================================================
+# TEXT LOCATION ANALYSIS
+# ============================================================
 
 @router.post(
     "/analyze",
@@ -44,69 +71,195 @@ async def analyze_location(
     request: LocationRequest,
     db: Session = Depends(get_db),
 ):
+    """
+    Analyze a text location clue.
+
+    Pipeline:
+
+        User clue
+            ↓
+        Groq location extraction
+            ↓
+        Locality resolution
+            ↓
+        OSM verification
+            ↓
+        Nearby landmark evidence
+            ↓
+        Database save
+            ↓
+        Structured response
+    """
+
     location_request = None
 
     try:
+
         # ====================================================
-        # 1. SAVE USER REQUEST
+        # 1. VALIDATE INPUT
+        # ====================================================
+
+        if (
+            not request.clue
+            or not request.clue.strip()
+        ):
+
+            raise HTTPException(
+                status_code=400,
+                detail="Location clue cannot be empty.",
+            )
+
+        clue = request.clue.strip()
+
+        # ====================================================
+        # 2. SAVE USER REQUEST
         # ====================================================
 
         now = datetime.utcnow()
 
         location_request = LocationRequestDB(
             input_type="text",
-            input_text=request.clue,
+            input_text=clue,
             created_at=now,
             expires_at=now + timedelta(hours=2),
         )
 
-        db.add(location_request)
-        db.commit()
-        db.refresh(location_request)
-
-        # ====================================================
-        # 2. GROQ ANALYSIS
-        # ====================================================
-
-        ai_result = await analyzer.analyze_text(
-            request.clue
+        db.add(
+            location_request
         )
 
-        print("=" * 60)
-        print("AI RESULT")
-        print(ai_result)
-        print("=" * 60)
+        db.commit()
+
+        db.refresh(
+            location_request
+        )
 
         # ====================================================
-        # 3. EXTRACT AI INFORMATION
+        # 3. AI ANALYSIS
         # ====================================================
 
-        province = ai_result.get("province")
-        city = ai_result.get("city")
+        ai_result = await (
+            analyzer.analyze_text(
+                clue
+            )
+        )
 
-        ai_town = ai_result.get("town")
-        ai_area = ai_result.get("area")
-        ai_street = ai_result.get("street")
+        print(
+            "=" * 60
+        )
+        print(
+            "AI RESULT"
+        )
+        print(
+            ai_result
+        )
+        print(
+            "=" * 60
+        )
+
+        if not ai_result:
+
+            raise HTTPException(
+                status_code=500,
+                detail="Location AI returned no result.",
+            )
+
+        # ====================================================
+        # 4. EXTRACT AI INFORMATION
+        # ====================================================
+
+        province = ai_result.get(
+            "province"
+        )
+
+        city = ai_result.get(
+            "city"
+        )
+
+        ai_town = ai_result.get(
+            "town"
+        )
+
+        ai_area = ai_result.get(
+            "area"
+        )
+
+        ai_street = ai_result.get(
+            "street"
+        )
 
         house_number = ai_result.get(
             "house_number"
         )
 
         place_names = (
-            ai_result.get("place_names")
+            ai_result.get(
+                "place_names"
+            )
             or []
         )
 
         landmarks = (
-            ai_result.get("landmarks")
+            ai_result.get(
+                "landmarks"
+            )
             or []
         )
 
         confidence = ai_result.get(
-            "confidence"
+            "confidence",
+            0,
         )
 
-        # Final values
+        if not isinstance(
+            place_names,
+            list,
+        ):
+            place_names = []
+
+        if not isinstance(
+            landmarks,
+            list,
+        ):
+            landmarks = []
+
+        place_names = [
+            str(
+                value
+            ).strip()
+            for value in place_names
+            if str(
+                value
+            ).strip()
+        ]
+
+        landmarks = [
+            str(
+                value
+            ).strip()
+            for value in landmarks
+            if str(
+                value
+            ).strip()
+        ]
+
+        # Remove duplicates.
+        place_names = list(
+            dict.fromkeys(
+                place_names
+            )
+        )
+
+        landmarks = list(
+            dict.fromkeys(
+                landmarks
+            )
+        )
+
+        # ====================================================
+        # 5. INITIAL VALUES
+        # ====================================================
+
         town = None
         area = None
         street = ai_street
@@ -119,76 +272,119 @@ async def analyze_location(
         ranked_places = []
 
         # ====================================================
-        # 4. BUILD LOCALITY CANDIDATES
+        # 6. INTERNAL DATABASE MATCH
+        # ====================================================
+
+        try:
+
+            database_matches = (
+                LocationResolver.find_database_matches(
+                    db=db,
+                    province=province,
+                    city=city,
+                    town=ai_town,
+                    area=ai_area,
+                    street=ai_street,
+                    landmarks=landmarks,
+                )
+            )
+
+        except Exception as exc:
+
+            print(
+                "DATABASE LOCATION MATCH ERROR:",
+                type(exc).__name__,
+                str(exc),
+            )
+
+            database_matches = []
+
+        if database_matches:
+
+            best_match = (
+                database_matches[0]
+            )
+
+            latitude = (
+                best_match.latitude
+            )
+
+            longitude = (
+                best_match.longitude
+            )
+
+            if not province:
+                province = (
+                    best_match.province
+                )
+
+            if not city:
+                city = (
+                    best_match.city
+                )
+
+            if not ai_town:
+                ai_town = (
+                    best_match.town
+                )
+
+            if not ai_area:
+                ai_area = (
+                    best_match.area
+                )
+
+            if not street:
+                street = (
+                    best_match.street
+                )
+
+        # ====================================================
+        # 7. BUILD LOCALITY NAMES
         # ====================================================
 
         locality_names = []
 
         if ai_town:
-            locality_names.append(ai_town)
+            locality_names.append(
+                ai_town
+            )
 
         if ai_area:
-            locality_names.append(ai_area)
+            locality_names.append(
+                ai_area
+            )
 
         locality_names.extend(
             place_names
         )
 
-        # Remove duplicates
         locality_names = list(
             dict.fromkeys(
                 name.strip()
                 for name in locality_names
-                if isinstance(name, str)
+                if isinstance(
+                    name,
+                    str,
+                )
                 and name.strip()
             )
         )
 
-        print("=" * 60)
-        print("LOCALITY NAMES")
-        print(locality_names)
-        print("=" * 60)
-
-        # ====================================================
-        # 5. SEARCH NISHAAN DATABASE
-        # ====================================================
-
-        database_matches = (
-            LocationResolver.find_database_matches(
-                db=db,
-                province=province,
-                city=city,
-                town=ai_town,
-                area=ai_area,
-                street=ai_street,
-                landmarks=landmarks,
-            )
+        print(
+            "=" * 60
+        )
+        print(
+            "LOCALITY NAMES"
+        )
+        print(
+            locality_names
+        )
+        print(
+            "=" * 60
         )
 
-        if database_matches:
-
-            best_match = database_matches[0]
-
-            latitude = best_match.latitude
-            longitude = best_match.longitude
-
-            if not province:
-                province = best_match.province
-
-            if not city:
-                city = best_match.city
-
-            if not ai_town:
-                ai_town = best_match.town
-
-            if not ai_area:
-                ai_area = best_match.area
-
-            if not street:
-                street = best_match.street
-
         # ====================================================
-        # 6. RESOLVE NAMED LOCALITIES USING OSM
+        # 8. RESOLVE NAMED LOCALITIES
         # ====================================================
 
         resolved_localities = []
@@ -196,46 +392,72 @@ async def analyze_location(
         for locality_name in locality_names:
 
             try:
-                results = (
-                    await LocalityResolver.resolve(
+
+                results = await (
+                    LocalityResolver.resolve(
                         name=locality_name,
                         city=city,
                     )
                 )
 
-                for result in results:
+                for result in results or []:
 
-                    address = result.get(
-                        "address",
-                        {}
+                    address = (
+                        result.get(
+                            "address"
+                        )
+                        or {}
                     )
 
                     resolved_localities.append(
                         {
-                            "searched_name": locality_name,
-                            "display_name": result.get(
-                                "display_name"
+                            "searched_name": (
+                                locality_name
                             ),
-                            "type": result.get(
-                                "type"
+
+                            "display_name": (
+                                result.get(
+                                    "display_name"
+                                )
                             ),
-                            "addresstype": result.get(
-                                "addresstype"
+
+                            "type": (
+                                result.get(
+                                    "type"
+                                )
                             ),
+
+                            "addresstype": (
+                                result.get(
+                                    "addresstype"
+                                )
+                            ),
+
                             "city": (
-                                address.get("city")
+                                address.get(
+                                    "city"
+                                )
                                 or address.get(
                                     "municipality"
                                 )
                             ),
+
                             "town": (
-                                address.get("town")
+                                address.get(
+                                    "town"
+                                )
+                                or address.get(
+                                    "village"
+                                )
                                 or address.get(
                                     "municipality"
                                 )
                             ),
+
                             "area": (
-                                address.get("suburb")
+                                address.get(
+                                    "suburb"
+                                )
                                 or address.get(
                                     "neighbourhood"
                                 )
@@ -243,67 +465,71 @@ async def analyze_location(
                                     "locality"
                                 )
                             ),
-                            "street": address.get(
-                                "road"
+
+                            "street": (
+                                address.get(
+                                    "road"
+                                )
                             ),
                         }
                     )
 
-            except Exception as e:
+            except Exception as exc:
 
                 print(
                     "LOCALITY RESOLUTION ERROR:",
                     locality_name,
-                    str(e),
+                    type(exc).__name__,
+                    str(exc),
                 )
 
-        print("=" * 60)
-        print("RESOLVED LOCALITIES")
-
-        for locality in resolved_localities:
-            print(locality)
-
-        print("=" * 60)
-
         # ====================================================
-        # 7. APPLY OSM HIERARCHY
+        # 9. APPLY LOCALITY HIERARCHY
         # ====================================================
 
-        # First prefer explicitly returned OSM hierarchy.
         for locality in resolved_localities:
 
-            resolved_city = locality.get(
-                "city"
+            resolved_city = (
+                locality.get(
+                    "city"
+                )
             )
 
-            resolved_town = locality.get(
-                "town"
+            resolved_town = (
+                locality.get(
+                    "town"
+                )
             )
 
-            resolved_area = locality.get(
-                "area"
+            resolved_area = (
+                locality.get(
+                    "area"
+                )
             )
 
             if (
                 resolved_city
                 and not city
             ):
+
                 city = resolved_city
 
             if (
                 resolved_town
                 and not town
             ):
+
                 town = resolved_town
 
             if (
                 resolved_area
                 and not area
             ):
+
                 area = resolved_area
 
         # ====================================================
-        # 8. NOMINATIM STREET / LOCATION SEARCH
+        # 10. OSM GEOCODING
         # ====================================================
 
         if (
@@ -311,46 +537,32 @@ async def analyze_location(
             or longitude is None
         ):
 
-            # Include the strongest locality context.
-            geocode_town = town or ai_town
-            geocode_area = area or ai_area
+            try:
 
-            osm_results = (
-                await GeocodingService.search(
-                    province=province,
-                    city=city,
-                    town=geocode_town,
-                    area=geocode_area,
-                    street=street,
-                    landmarks=landmarks,
+                osm_results = await (
+                    GeocodingService.search(
+                        province=province,
+                        city=city,
+                        town=town or ai_town,
+                        area=area or ai_area,
+                        street=street,
+                        landmarks=landmarks,
+                    )
                 )
-            )
+
+            except Exception as exc:
+
+                print(
+                    "OSM GEOCODING ERROR:",
+                    type(exc).__name__,
+                    str(exc),
+                )
+
+                osm_results = []
 
             if osm_results:
 
-                best_osm = osm_results[0]
-
-                osm_latitude = best_osm.get(
-                    "lat"
-                )
-
-                osm_longitude = best_osm.get(
-                    "lon"
-                )
-
-                osm_address = best_osm.get(
-                    "address",
-                    {}
-                )
-
-                addresstype = best_osm.get(
-                    "addresstype"
-                )
-
-                # --------------------------------------------
-                # Only accept reasonably precise results
-                # --------------------------------------------
-
+                # Prefer precise geographic objects.
                 usable_osm_types = {
                     "road",
                     "street",
@@ -362,38 +574,66 @@ async def analyze_location(
                     "amenity",
                     "shop",
                     "place",
+                    "locality",
+                    "neighbourhood",
+                    "suburb",
                 }
 
-                if (
-                    addresstype
-                    in usable_osm_types
-                ):
+                best_osm = None
 
-                    if osm_latitude is not None:
-                        latitude = float(
-                            osm_latitude
+                for candidate in osm_results:
+
+                    if (
+                        candidate.get(
+                            "addresstype"
                         )
+                        in usable_osm_types
+                    ):
 
-                    if osm_longitude is not None:
-                        longitude = float(
-                            osm_longitude
-                        )
+                        best_osm = candidate
+                        break
 
-                else:
+                if best_osm is None:
 
-                    print(
-                        "OSM RESULT TOO BROAD:",
-                        addresstype,
-                        best_osm.get(
-                            "display_name"
-                        ),
+                    best_osm = osm_results[0]
+
+                osm_latitude = (
+                    best_osm.get(
+                        "lat"
+                    )
+                )
+
+                osm_longitude = (
+                    best_osm.get(
+                        "lon"
+                    )
+                )
+
+                osm_address = (
+                    best_osm.get(
+                        "address"
+                    )
+                    or {}
+                )
+
+                if osm_latitude is not None:
+
+                    latitude = float(
+                        osm_latitude
                     )
 
-                # --------------------------------------------
-                # Geographic hierarchy
-                # --------------------------------------------
+                if osm_longitude is not None:
+
+                    longitude = float(
+                        osm_longitude
+                    )
+
+                # ------------------------------------------------
+                # Fill geographic hierarchy only when missing.
+                # ------------------------------------------------
 
                 if not province:
+
                     province = (
                         osm_address.get(
                             "state"
@@ -404,6 +644,7 @@ async def analyze_location(
                     )
 
                 if not city:
+
                     city = (
                         osm_address.get(
                             "city"
@@ -416,9 +657,8 @@ async def analyze_location(
                         )
                     )
 
-                # Only use these if locality resolver
-                # has not already provided them.
                 if not town:
+
                     town = (
                         osm_address.get(
                             "town"
@@ -429,6 +669,7 @@ async def analyze_location(
                     )
 
                 if not area:
+
                     area = (
                         osm_address.get(
                             "suburb"
@@ -442,151 +683,250 @@ async def analyze_location(
                     )
 
                 if not street:
-                    street = osm_address.get(
-                        "road"
+
+                    street = (
+                        osm_address.get(
+                            "road"
+                        )
                     )
 
-                print("=" * 60)
-                print("OSM GEOCODING RESULT")
-                print(best_osm)
-                print("=" * 60)
+                if not house_number:
 
-        # ====================================================
-        # 9. POSTGIS POINT
-        # ====================================================
-
-        if (
-            latitude is not None
-            and longitude is not None
-        ):
-
-            spatial_location = WKTElement(
-                f"POINT({longitude} {latitude})",
-                srid=4326,
-            )
-
-        # ====================================================
-        # 10. FIND NEARBY OSM PLACES
-        # ====================================================
-
-        if (
-            latitude is not None
-            and longitude is not None
-        ):
-
-            osm_places = (
-                await OSMPlacesService.nearby_places(
-                    latitude=latitude,
-                    longitude=longitude,
-                    radius_meters=500,
-                )
-            )
-
-            print("=" * 60)
-            print(
-                "OSM NEARBY PLACES:",
-                len(osm_places),
-            )
-            print("=" * 60)
-
-            # =================================================
-            # 11. RANK SUPPORTING LANDMARKS
-            # =================================================
-
-            ranked_places = (
-                LocationMatchingService.rank_places(
-                    places=osm_places,
-                    anchor_latitude=latitude,
-                    anchor_longitude=longitude,
-                    city=city,
-                    street=street,
-                    landmarks=landmarks,
-                )
-            )
-
-            print("=" * 60)
-            print("RANKED LOCATION EVIDENCE")
-
-            for place in ranked_places[:5]:
+                    house_number = (
+                        osm_address.get(
+                            "house_number"
+                        )
+                    )
 
                 print(
-                    place["score"],
-                    place["name"],
-                    place["distance_meters"],
-                    place["reasons"],
+                    "=" * 60
+                )
+                print(
+                    "OSM GEOCODING RESULT"
+                )
+                print(
+                    best_osm
+                )
+                print(
+                    "=" * 60
                 )
 
-            print("=" * 60)
+        # ====================================================
+        # 11. POSTGIS POINT
+        # ====================================================
+
+        if (
+            latitude is not None
+            and longitude is not None
+        ):
+
+            spatial_location = (
+                WKTElement(
+                    f"POINT({longitude} {latitude})",
+                    srid=4326,
+                )
+            )
 
         # ====================================================
-        # 12. SAVE RESULT
+        # 12. NEARBY OSM PLACES
+        # ====================================================
+
+        if (
+            latitude is not None
+            and longitude is not None
+        ):
+
+            try:
+
+                osm_places = await (
+                    OSMPlacesService.nearby_places(
+                        latitude=latitude,
+                        longitude=longitude,
+                        radius_meters=500,
+                    )
+                )
+
+                print(
+                    "=" * 60
+                )
+                print(
+                    "OSM NEARBY PLACES:",
+                    len(osm_places),
+                )
+                print(
+                    "=" * 60
+                )
+
+                ranked_places = (
+                    LocationMatchingService.rank_places(
+                        places=osm_places,
+                        anchor_latitude=latitude,
+                        anchor_longitude=longitude,
+                        city=city,
+                        street=street,
+                        landmarks=landmarks,
+                    )
+                )
+
+                print(
+                    "=" * 60
+                )
+                print(
+                    "RANKED LOCATION EVIDENCE"
+                )
+                print(
+                    "=" * 60
+                )
+
+                for place in ranked_places[:5]:
+
+                    print(
+                        place.get(
+                            "score"
+                        ),
+                        place.get(
+                            "name"
+                        ),
+                        place.get(
+                            "distance_meters"
+                        ),
+                        place.get(
+                            "reasons"
+                        ),
+                    )
+
+                print(
+                    "=" * 60
+                )
+
+            except Exception as exc:
+
+                print(
+                    "NEARBY OSM ERROR:",
+                    type(exc).__name__,
+                    str(exc),
+                )
+
+        # ====================================================
+        # 13. FINAL STATUS
+        # ====================================================
+
+        status = (
+            "success"
+            if (
+                latitude is not None
+                and longitude is not None
+            )
+            else "not_verified"
+        )
+
+        if status == "not_verified":
+
+            confidence = min(
+                int(
+                    confidence or 0
+                ),
+                30,
+            )
+
+        # ====================================================
+        # 14. SAVE RESULT
         # ====================================================
 
         location_result = LocationResultDB(
-            request_id=location_request.id,
+            request_id=(
+                location_request.id
+            ),
 
             province=province,
+
             city=city,
+
             town=town,
+
             area=area,
+
             street=street,
 
             latitude=latitude,
+
             longitude=longitude,
 
             location=spatial_location,
 
-            confidence=confidence,
+            confidence=int(
+                confidence or 0
+            ),
         )
 
-        db.add(location_result)
+        db.add(
+            location_result
+        )
+
         db.commit()
-        db.refresh(location_result)
+
+        db.refresh(
+            location_result
+        )
 
         # ====================================================
-        # 13. FINAL RESPONSE
+        # 15. RESPONSE
         # ====================================================
 
         return LocationResponse(
-    status="success",
+            status=status,
 
-    province=province,
-    city=city,
-    town=town,
-    area=area,
-    street=street,
+            province=province,
 
-    house_number=house_number,
+            city=city,
 
-    place_names=place_names,
-    landmarks=landmarks,
+            town=town,
 
-    latitude=latitude,
-    longitude=longitude,
+            area=area,
 
-    confidence=confidence,
-)
+            street=street,
+
+            house_number=house_number,
+
+            place_names=place_names,
+
+            landmarks=landmarks,
+
+            latitude=latitude,
+
+            longitude=longitude,
+
+            confidence=int(
+                confidence or 0
+            ),
+        )
 
     except HTTPException:
         raise
 
-    except Exception as e:
+    except Exception as exc:
 
         db.rollback()
 
-        print("=" * 60)
-        print("LOCATION ANALYSIS ERROR")
+        print(
+            "=" * 60
+        )
+        print(
+            "LOCATION ANALYSIS ERROR"
+        )
         print(
             "ERROR TYPE:",
-            type(e).__name__,
+            type(exc).__name__,
         )
         print(
             "ERROR:",
-            str(e),
+            str(exc),
         )
-        print("=" * 60)
+        print(
+            "=" * 60
+        )
 
         raise HTTPException(
             status_code=500,
-            detail=str(e),
+            detail=str(exc),
         )

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { analyzeText } from "../../lib/api";
 import {
   FiCheck,
   FiMapPin,
@@ -251,7 +252,32 @@ export default function AnalyzingPage() {
   const router = useRouter();
 
   const [stage, setStage] = useState(0);
+  const apiDoneRef = useRef(false);
 
+  // Start the API call IMMEDIATELY
+  useEffect(() => {
+    const clue = sessionStorage.getItem("nishaan_text_clue");
+    if (!clue) return;
+
+    analyzeText(clue)
+      .then((result) => {
+        sessionStorage.setItem(
+          "nishaan_text_result",
+          JSON.stringify(result)
+        );
+        apiDoneRef.current = true;
+      })
+      .catch((error) => {
+        console.error("[Nishaan] Text analysis error:", error);
+        sessionStorage.setItem(
+          "nishaan_text_result",
+          JSON.stringify({ status: "error", message: error.message })
+        );
+        apiDoneRef.current = true;
+      });
+  }, []);
+
+  // Animation timer
   useEffect(() => {
     const timer = setInterval(() => {
       setStage((current) => {
@@ -267,14 +293,28 @@ export default function AnalyzingPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // When animation finishes, wait for API then navigate
   useEffect(() => {
-    if (stage === stages.length - 1) {
-      const timer = setTimeout(() => {
-        router.push("/text/result");
-      }, 2500);
+    if (stage !== stages.length - 1) return;
 
-      return () => clearTimeout(timer);
-    }
+    let pollId;
+    const timeoutId = setTimeout(() => {
+      if (apiDoneRef.current) {
+        router.push("/text/result");
+        return;
+      }
+      pollId = setInterval(() => {
+        if (apiDoneRef.current) {
+          clearInterval(pollId);
+          router.push("/text/result");
+        }
+      }, 500);
+    }, 2500);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (pollId) clearInterval(pollId);
+    };
   }, [stage, router]);
 
   const progress = (stage / (stages.length - 1)) * 100;

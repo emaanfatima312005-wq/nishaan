@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { analyzeImageFromBase64 } from "../../lib/api";
 
 // Same key used by your Image Input page
 const IMAGE_STORAGE_KEY = "nishaanImage";
@@ -43,6 +44,9 @@ export default function AnalyzingPage() {
 
   const [activeStep, setActiveStep] = useState(0);
 
+  // Ref to track when the API call finishes
+  const apiDoneRef = useRef(false);
+
   /*
    * Check that uploaded image exists.
    * The image itself is NOT displayed on this page.
@@ -61,11 +65,109 @@ export default function AnalyzingPage() {
   }, [router]);
 
   /*
-   * Analysis progress
+   * Start the API call IMMEDIATELY — runs in parallel with animation.
+   * Stores the raw API response in sessionStorage.
+   */
+  useEffect(() => {
+    const storedImage = sessionStorage.getItem(IMAGE_STORAGE_KEY);
+    if (!storedImage) {
+      console.warn("[Nishaan] No image found in sessionStorage");
+      return;
+    }
+
+    try {
+      const img = JSON.parse(storedImage);
+      console.log(
+        "[Nishaan] Calling image API:",
+        img.name,
+        img.type,
+        `data length: ${img.data?.length || 0}`
+      );
+
+      analyzeImageFromBase64(img.data, img.name, img.type)
+        .then((apiResult) => {
+          console.log("[Nishaan] Image API success:", {
+            city: apiResult.city,
+            province: apiResult.province,
+            latitude: apiResult.latitude,
+            longitude: apiResult.longitude,
+            confidence: apiResult.confidence,
+          });
+
+          try {
+            sessionStorage.setItem(
+              "nishaanImageResult",
+              JSON.stringify(apiResult)
+            );
+          } catch (storageError) {
+            console.error(
+              "[Nishaan] sessionStorage write failed (result too large?):",
+              storageError
+            );
+          }
+
+          apiDoneRef.current = true;
+        })
+        .catch((error) => {
+          console.error("[Nishaan] Image API call failed:", error.message, error);
+          sessionStorage.setItem(
+            "nishaanImageResult",
+            JSON.stringify({ status: "error", message: error.message })
+          );
+          apiDoneRef.current = true;
+        });
+    } catch (error) {
+      console.error("[Nishaan] Image JSON parse error:", error);
+      sessionStorage.setItem(
+        "nishaanImageResult",
+        JSON.stringify({ status: "error", message: "Could not process uploaded image." })
+      );
+      apiDoneRef.current = true;
+    }
+  }, []);
+
+  /*
+   * Animation progress — runs independently of the API call.
+   * When animation finishes, waits for API if still running, then navigates.
    */
   useEffect(() => {
     let cancelled = false;
     let timeoutId;
+    let pollId;
+
+    function navigateToResult() {
+      if (cancelled) return;
+
+      // If API didn't store a result (error), store nothing extra —
+      // the result page will redirect back to /image.
+      if (!sessionStorage.getItem("nishaanImageResult")) {
+        // Store a minimal fallback so the result page doesn't crash
+        sessionStorage.setItem(
+          "nishaanImageResult",
+          JSON.stringify({ status: "error" })
+        );
+      }
+
+      router.push(OUTPUT_ROUTE);
+    }
+
+    function waitForApi() {
+      if (apiDoneRef.current) {
+        navigateToResult();
+      } else {
+        // Poll every 500ms until API finishes
+        pollId = setInterval(() => {
+          if (cancelled) {
+            clearInterval(pollId);
+            return;
+          }
+          if (apiDoneRef.current) {
+            clearInterval(pollId);
+            navigateToResult();
+          }
+        }, 500);
+      }
+    }
 
     function scheduleNext(index) {
       if (cancelled) return;
@@ -73,27 +175,7 @@ export default function AnalyzingPage() {
       if (index >= STEP_DURATIONS.length) {
         timeoutId = setTimeout(() => {
           if (cancelled) return;
-
-          /*
-           * Temporary result.
-           * Replace this object with your actual model/API result
-           * when your backend is connected.
-           */
-          const result = {
-            location: "Islamabad",
-            country: "Pakistan",
-            confidence: 86,
-            clues: [
-              "Road structure",
-              "Building architecture",
-              "Urban environment",
-              "Electric poles pattern",
-            ],
-          };
-
-          sessionStorage.setItem("nishaanImageResult", JSON.stringify(result));
-
-          router.push(OUTPUT_ROUTE);
+          waitForApi();
         }, FINISH_DELAY_MS);
 
         return;
@@ -114,6 +196,7 @@ export default function AnalyzingPage() {
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
+      if (pollId) clearInterval(pollId);
     };
   }, [router]);
 

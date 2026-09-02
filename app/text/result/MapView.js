@@ -79,6 +79,7 @@ function FitMap({ destination, userLocation }) {
 export default function MapView({
   destination,
   userLocation,
+  locationInfo,
 }) {
   const destinationPosition = [
     destination.latitude,
@@ -122,13 +123,18 @@ export default function MapView({
               Nishaan Destination
             </strong>
 
-            <br />
-
-            Saddar, Rawalpindi
-
-            <br />
-
-            Bank Road
+            {locationInfo && (
+              <>
+                <br />
+                {locationInfo.area}{locationInfo.area && locationInfo.city ? ", " : ""}{locationInfo.city}
+                {locationInfo.street && (
+                  <>
+                    <br />
+                    {locationInfo.street}
+                  </>
+                )}
+              </>
+            )}
 
           </div>
 

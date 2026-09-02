@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { analyzeVoice } from "../../lib/api";
 import {
   FiMic,
   FiCheck,
@@ -16,6 +17,54 @@ export default function VoiceAnalyzingPage() {
   const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState(0);
+  const apiDoneRef = useRef(false);
+
+  // ===============================
+  // CALL VOICE API IMMEDIATELY
+  // ===============================
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("nishaan_voice_audio");
+    if (!stored) {
+      apiDoneRef.current = true;
+      return;
+    }
+
+    try {
+      const audioData = JSON.parse(stored);
+      const binary = atob(audioData.data.split(",")[1]);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: audioData.type });
+      const file = new File([blob], audioData.name, { type: audioData.type });
+
+      analyzeVoice(file)
+        .then((result) => {
+          sessionStorage.setItem(
+            "nishaan_voice_result",
+            JSON.stringify(result)
+          );
+          apiDoneRef.current = true;
+        })
+        .catch((error) => {
+          console.error("[Nishaan] Voice analysis error:", error);
+          sessionStorage.setItem(
+            "nishaan_voice_result",
+            JSON.stringify({ status: "error", message: error.message })
+          );
+          apiDoneRef.current = true;
+        });
+    } catch (error) {
+      console.error("[Nishaan] Voice audio parsing error:", error);
+      sessionStorage.setItem(
+        "nishaan_voice_result",
+        JSON.stringify({ status: "error", message: "Could not process recorded audio." })
+      );
+      apiDoneRef.current = true;
+    }
+  }, []);
 
   // ===============================
   // STEP REFERENCES
@@ -59,6 +108,7 @@ export default function VoiceAnalyzingPage() {
   // ===============================
 
   useEffect(() => {
+    let pollId;
     const interval = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev < steps.length - 1) {
@@ -67,15 +117,30 @@ export default function VoiceAnalyzingPage() {
 
         clearInterval(interval);
 
-        setTimeout(() => {
-          router.push("/voice/output");
-        }, 1000);
+        // Animation done — wait for API
+        const waitAndNavigate = () => {
+          if (apiDoneRef.current) {
+            router.push("/voice/output");
+          } else {
+            pollId = setInterval(() => {
+              if (apiDoneRef.current) {
+                clearInterval(pollId);
+                router.push("/voice/output");
+              }
+            }, 500);
+          }
+        };
+
+        setTimeout(waitAndNavigate, 1000);
 
         return prev;
       });
     }, 1400);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (pollId) clearInterval(pollId);
+    };
   }, [router]);
 
   // ===============================

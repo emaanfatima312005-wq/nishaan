@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   FiMic,
@@ -13,10 +13,24 @@ import {
 
 export default function VoicePage() {
   const fileInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const streamRef = useRef(null);
+  const audioFileRef = useRef(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [audioFile, setAudioFile] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
+  const [recordingError, setRecordingError] = useState(null);
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, []);
 
   // ===============================
   // SELECT AUDIO FILE
@@ -58,21 +72,131 @@ export default function VoicePage() {
   };
 
   // ===============================
-  // RECORDING UI
+  // STORE AUDIO FOR API
   // ===============================
 
-  const startRecording = () => {
-    setIsRecording(true);
+  const storeAudioForAnalysis = () => {
+    if (!audioFile) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        sessionStorage.setItem(
+          "nishaan_voice_audio",
+          JSON.stringify({
+            data: reader.result,
+            name: audioFile.name,
+            type: audioFile.type,
+            size: audioFile.size,
+          })
+        );
+      } catch (e) {
+        console.error("Could not store audio:", e);
+      }
+    };
+    reader.readAsDataURL(audioFile);
+  };
+
+  // ===============================
+  // LIVE RECORDING (MediaRecorder)
+  // ===============================
+
+  const startRecording = async () => {
+    setRecordingError(null);
     setAudioFile(null);
     setAudioURL(null);
+    chunksRef.current = [];
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const file = new File([blob], `nishaan-recording-${Date.now()}.webm`, {
+          type: mimeType,
+        });
+
+        audioFileRef.current = file;
+        setAudioFile(file);
+        const url = URL.createObjectURL(file);
+        setAudioURL(url);
+
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      };
+
+      recorder.start(250); // Collect data every 250ms
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    } catch (err) {
+      console.error("[Nishaan] Microphone access denied:", err);
+      setRecordingError(
+        "Microphone access is required for voice recording. Please allow it in your browser settings."
+      );
+    }
   };
 
   const stopRecording = () => {
-  setIsRecording(false);
+    setIsRecording(false);
 
-  // Move to the analyzing page
-  window.location.href = "/voice/analyzing";
-};
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
+      mediaRecorderRef.current = null;
+
+      // Poll using ref (not state) since onstop sets the ref synchronously
+      const waitForFile = setInterval(() => {
+        const file = audioFileRef.current;
+        if (file) {
+          clearInterval(waitForFile);
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              sessionStorage.setItem(
+                "nishaan_voice_audio",
+                JSON.stringify({
+                  data: reader.result,
+                  name: file.name,
+                  type: file.type,
+                  size: file.size,
+                })
+              );
+            } catch (e) {
+              console.error("[Nishaan] Could not store audio:", e);
+            }
+            window.location.href = "/voice/analyzing";
+          };
+          reader.readAsDataURL(file);
+        }
+      }, 100);
+
+      // Safety timeout: navigate after 8s even if something stalls
+      setTimeout(() => {
+        clearInterval(waitForFile);
+        const file = audioFileRef.current;
+        if (!file) {
+          console.warn("[Nishaan] Recording timed out, navigating anyway");
+          window.location.href = "/voice/analyzing";
+        }
+      }, 8000);
+    } else {
+      // No active recording — just navigate
+      window.location.href = "/voice/analyzing";
+    }
+  };
 
   return (
     <main
@@ -373,6 +497,14 @@ export default function VoicePage() {
               </div>
 
 
+              {/* Recording error */}
+              {recordingError && (
+                <p className="mx-auto mt-4 max-w-sm text-center text-sm text-red-600">
+                  {recordingError}
+                </p>
+              )}
+
+
               {/* ================================================= */}
               {/* DIVIDER */}
               {/* ================================================= */}
@@ -489,6 +621,9 @@ export default function VoicePage() {
 
                 <Link
                   href="/voice/analyzing"
+                  onClick={() => {
+                    storeAudioForAnalysis();
+                  }}
                   className="group mx-auto mt-8 flex w-fit items-center gap-3 rounded-full bg-[#0D3B0D] px-8 py-4 font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-[#2F6B2F]"
                 >
 

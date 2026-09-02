@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -9,6 +11,7 @@ import {
   FiCheck,
   FiSearch,
   FiCompass,
+  FiRefreshCw,
 } from "react-icons/fi";
 
 // Leaflet must load on the client
@@ -26,15 +29,100 @@ const NishaanMap = dynamic(() => import("./NishaanMap"), {
   ),
 });
 
+// No hardcoded location — real API results only.
+
 export default function VoiceOutputPage() {
-  // Temporary location.
-  // Later your backend will provide these coordinates.
-  const location = {
-    name: "Lahore, Pakistan",
-    latitude: 31.5204,
-    longitude: 74.3587,
-    confidence: 94,
-  };
+  const router = useRouter();
+  const [location, setLocation] = useState(null);
+  const [apiError, setApiError] = useState(null);
+
+  // Read real voice API result from sessionStorage
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("nishaan_voice_result");
+      if (!stored) return;
+
+      const result = JSON.parse(stored);
+
+      if (result.status === "error") {
+        setApiError(result.message || "Voice analysis failed.");
+        return;
+      }
+
+      const city = result.city || "";
+      const province = result.province || "";
+      const name = [city, province].filter(Boolean).join(", ");
+
+      setLocation({
+        name: name || "",
+        latitude: result.latitude,
+        longitude: result.longitude,
+        confidence: result.confidence ?? 0,
+      });
+    } catch (e) {
+      console.error("Could not read voice result:", e);
+      setApiError("Could not read analysis result.");
+    }
+  }, []);
+
+  // Show loading state
+  if (location === null && apiError === null) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#fbfcf7] px-5">
+        <p className="text-sm text-[#1A1A1A]/60">Loading result...</p>
+      </main>
+    );
+  }
+
+  // Show API error
+  if (apiError) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
+        <p className="text-lg font-semibold text-[#0D3B0D]">
+          Voice analysis failed.
+        </p>
+        <p className="max-w-md text-center text-sm text-[#1A1A1A]/60">
+          {apiError}
+        </p>
+        <button
+          onClick={() => {
+            sessionStorage.removeItem("nishaan_voice_result");
+            sessionStorage.removeItem("nishaan_voice_audio");
+            router.push("/voice");
+          }}
+          className="mt-2 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
+        >
+          <FiRefreshCw size={17} />
+          Record Again
+        </button>
+      </main>
+    );
+  }
+
+  // Show error if API returned no coordinates
+  if (!location.latitude || !location.longitude) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
+        <p className="text-lg font-semibold text-[#0D3B0D]">
+          Voice analysis could not identify a location.
+        </p>
+        <p className="text-sm text-[#1A1A1A]/60">
+          Try recording again with clearer location descriptions.
+        </p>
+        <button
+          onClick={() => {
+            sessionStorage.removeItem("nishaan_voice_result");
+            sessionStorage.removeItem("nishaan_voice_audio");
+            router.push("/voice");
+          }}
+          className="mt-2 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
+        >
+          <FiRefreshCw size={17} />
+          Record Again
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">

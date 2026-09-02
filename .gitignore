@@ -163,3 +163,13 @@ pnpm-debug.log*
 # -----------------------------
 .cache/
 .temp/
+
+# -----------------------------
+# Large GeoNames data
+# -----------------------------
+
+backend/data/alternateNames.txt
+backend/data/alternateNames.zip
+
+# Backend runtime uploads
+backend/uploads/

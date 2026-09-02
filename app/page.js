@@ -25,20 +25,51 @@ export default function Home() {
       {/* ================================================= */}
 
       <section className="relative min-h-[calc(100vh-96px)] overflow-hidden">
-        {/* ================= BACKGROUND GLOWS ================= */}
+        {/* ================================================= */}
+        {/* FULL BACKGROUND VIDEO */}
+        {/* ================================================= */}
 
-        <div className="absolute left-[10%] top-[20%] h-[500px] w-[500px] rounded-full bg-[#5FAF5F]/10 blur-[140px] animate-pulse" />
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src="/videos/nishaan-animation.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
 
-        <div className="absolute right-[5%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#2F6B2F]/10 blur-[120px]" />
+        {/* ================================================= */}
+        {/* VIDEO OVERLAYS */}
+        {/* ================================================= */}
 
-        <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#5FAF5F]/5" />
+        {/* Main transparent overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-[#fbfcf7]/25" />
 
-        <div className="absolute left-1/2 top-1/2 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#2F6B2F]/5" />
+        {/* Light overlay on left so heading is readable */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#fbfcf7]/90 via-[#fbfcf7]/55 to-transparent" />
 
-        {/* ================= BACKGROUND GRID ================= */}
+        {/* Bottom fade */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#fbfcf7] to-transparent" />
+
+        {/* ================================================= */}
+        {/* BACKGROUND GLOWS */}
+        {/* ================================================= */}
+
+        <div className="pointer-events-none absolute left-[10%] top-[20%] h-[500px] w-[500px] rounded-full bg-[#5FAF5F]/10 blur-[140px] animate-pulse" />
+
+        <div className="pointer-events-none absolute right-[5%] bottom-[10%] h-[400px] w-[400px] rounded-full bg-[#2F6B2F]/10 blur-[120px]" />
+
+        <div className="pointer-events-none absolute right-[10%] top-[15%] h-[500px] w-[500px] rounded-full bg-[#C8E6C9]/20 blur-[120px]" />
+
+        {/* ================================================= */}
+        {/* BACKGROUND GRID */}
+        {/* ================================================= */}
 
         <div
-          className="absolute inset-0 opacity-[0.035]"
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
           style={{
             backgroundImage:
               "linear-gradient(#0D3B0D 1px, transparent 1px), linear-gradient(90deg, #0D3B0D 1px, transparent 1px)",
@@ -46,30 +77,42 @@ export default function Home() {
           }}
         />
 
-        {/* ================= FLOATING COORDINATES ================= */}
+        {/* ================================================= */}
+        {/* DECORATIVE CIRCLES */}
+        {/* ================================================= */}
 
-        <div className="absolute left-[12%] top-[18%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/30 animate-data-float">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#5FAF5F]/5" />
+
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[900px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#2F6B2F]/5" />
+
+        {/* ================================================= */}
+        {/* FLOATING COORDINATES */}
+        {/* ================================================= */}
+
+        <div className="pointer-events-none absolute left-[12%] top-[18%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/40 animate-data-float">
           31.5204° N
         </div>
 
-        <div className="absolute right-[15%] top-[28%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/30 animate-data-float-reverse">
+        <div className="pointer-events-none absolute right-[15%] top-[28%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/40 animate-data-float-reverse">
           74.3587° E
         </div>
 
-        <div className="absolute left-[18%] bottom-[25%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/30 animate-data-float">
+        <div className="pointer-events-none absolute left-[18%] bottom-[25%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/40 animate-data-float">
           REGION SCAN
         </div>
 
-        <div className="absolute right-[20%] bottom-[18%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/30 animate-data-float-reverse">
+        <div className="pointer-events-none absolute right-[20%] bottom-[18%] text-[11px] tracking-[0.25em] text-[#2F6B2F]/40 animate-data-float-reverse">
           GEO DATA
         </div>
 
-        {/* ================= DECORATIVE SVG ================= */}
+        {/* ================================================= */}
+        {/* DECORATIVE SVG */}
+        {/* ================================================= */}
 
         <svg
-          className="absolute inset-0 opacity-[0.05]"
-          width="100%"
-          height="100%"
+          className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.08]"
+          viewBox="0 0 1440 800"
+          preserveAspectRatio="none"
         >
           <path
             d="M100 200 C300 150 500 250 700 200"
@@ -93,21 +136,17 @@ export default function Home() {
           />
         </svg>
 
-        {/* ================= BACKGROUND GLOW ================= */}
-
-        <div className="absolute right-[10%] top-[15%] h-[500px] w-[500px] rounded-full bg-[#C8E6C9]/40 blur-[120px]" />
-
         {/* ================================================= */}
         {/* HERO CONTENT */}
         {/* ================================================= */}
 
-        <div className="relative z-10 mx-auto grid min-h-[calc(100vh-96px)] max-w-[1450px] grid-cols-1 items-center gap-4 px-6 lg:grid-cols-2 lg:px-14">
+        <div className="relative z-10 mx-auto flex min-h-[calc(100vh-96px)] max-w-[1450px] items-center px-6 lg:px-14">
           {/* ================================================= */}
           {/* LEFT CONTENT */}
           {/* ================================================= */}
 
           <div
-            className="relative z-20 pt-12 lg:pt-0"
+            className="relative z-20 max-w-3xl pt-12 lg:pt-0"
             data-aos="fade-right"
             data-aos-duration="1200"
           >
@@ -123,6 +162,10 @@ export default function Home() {
               Let Nishaan discover where it is.
             </p>
 
+            {/* ================================================= */}
+            {/* BUTTONS */}
+            {/* ================================================= */}
+
             <div className="mt-9 flex flex-wrap gap-4">
               <Link
                 href="/explore"
@@ -134,54 +177,18 @@ export default function Home() {
 
               <Link
                 href="/how-it-works"
-                className="flex items-center gap-3 rounded-full border border-[#C8E6C9] bg-white px-7 py-4 font-semibold text-[#1A1A1A] transition-all duration-300 hover:-translate-y-1 hover:border-[#5FAF5F] hover:text-[#0D3B0D]"
+                className="flex items-center gap-3 rounded-full border border-[#C8E6C9] bg-white/80 px-7 py-4 font-semibold text-[#1A1A1A] shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#5FAF5F] hover:text-[#0D3B0D]"
               >
                 <FiActivity />
                 How It Works
               </Link>
             </div>
           </div>
-
-          {/* ================================================= */}
-          {/* VIDEO VISUAL */}
-          {/* ================================================= */}
-
-          <div
-            className="relative flex h-[600px] items-center justify-center lg:h-[720px]"
-            data-aos="zoom-in"
-            data-aos-duration="1400"
-          >
-            {/* ================= VIDEO GLOW ================= */}
-
-            <div className="absolute h-[550px] w-[550px] rounded-full bg-[#5FAF5F]/20 blur-[120px] animate-pulse" />
-
-            {/* ================= VIDEO ================= */}
-
-            <div className="relative z-10 h-[480px] w-[480px] sm:h-[550px] sm:w-[550px] lg:h-[650px] lg:w-[650px]">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                className="absolute inset-0 h-full w-full object-cover"
-              >
-                <source src="/videos/nishaan-animation.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-
-              {/* ================= VIDEO BLENDING ================= */}
-
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#fbfcf7]/30 via-transparent to-transparent" />
-
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#fbfcf7]/10 via-transparent to-[#fbfcf7]/35" />
-
-              <div className="pointer-events-none absolute inset-0 bg-[#5FAF5F]/5 mix-blend-screen" />
-            </div>
-          </div>
         </div>
 
-        {/* ================= BOTTOM FADE ================= */}
+        {/* ================================================= */}
+        {/* BOTTOM FADE */}
+        {/* ================================================= */}
 
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#fbfcf7] to-transparent" />
       </section>
@@ -196,7 +203,9 @@ export default function Home() {
         <div className="absolute -right-40 bottom-10 h-96 w-96 rounded-full bg-[#5FAF5F]/10 blur-3xl" />
 
         <div className="relative z-10 mx-auto max-w-7xl">
-          {/* ================= SECTION HEADING ================= */}
+          {/* ================================================= */}
+          {/* SECTION HEADING */}
+          {/* ================================================= */}
 
           <div className="max-w-3xl" data-aos="fade-up">
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-[#5FAF5F]">
@@ -223,7 +232,9 @@ export default function Home() {
           {/* ================================================= */}
 
           <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* ================= IMAGE ================= */}
+            {/* ================================================= */}
+            {/* IMAGE CARD */}
+            {/* ================================================= */}
 
             <Link
               href="/image"
@@ -262,7 +273,9 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* ================= VOICE ================= */}
+            {/* ================================================= */}
+            {/* VOICE CARD */}
+            {/* ================================================= */}
 
             <Link
               href="/voice"
@@ -301,7 +314,9 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* ================= TEXT ================= */}
+            {/* ================================================= */}
+            {/* TEXT CARD */}
+            {/* ================================================= */}
 
             <Link
               href="/text"
@@ -351,6 +366,8 @@ export default function Home() {
             data-aos-delay="400"
           >
             <div className="grid grid-cols-1 md:grid-cols-3">
+              {/* GEOSPATIAL */}
+
               <div className="flex items-center gap-5 p-7 md:border-r border-[#C8E6C9]">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0D3B0D]">
                   <FiTarget className="text-xl text-[#5FAF5F]" />
@@ -367,6 +384,8 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* DISCOVERY */}
+
               <div className="flex items-center gap-5 p-7 md:border-r border-[#C8E6C9]">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#2F6B2F]">
                   <FiSearch className="text-xl text-white" />
@@ -382,6 +401,8 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+
+              {/* INTELLIGENCE */}
 
               <div className="flex items-center gap-5 p-7">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5FAF5F]">

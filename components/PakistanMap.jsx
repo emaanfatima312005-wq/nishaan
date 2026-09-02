@@ -20,7 +20,6 @@ export default function PakistanMap() {
 
   return (
     <div className="relative w-full max-w-[680px] mx-auto">
-
       {/* ================================================= */}
       {/* ATMOSPHERIC GLOW */}
       {/* ================================================= */}
@@ -41,13 +40,11 @@ export default function PakistanMap() {
         "
       />
 
-
       {/* ================================================= */}
       {/* PARTICLES */}
       {/* ================================================= */}
 
       <div className="absolute inset-0 pointer-events-none">
-
         <span className="absolute left-[18%] top-[25%] w-1.5 h-1.5 rounded-full bg-[#5FAF5F] animate-ping" />
 
         <span
@@ -55,32 +52,23 @@ export default function PakistanMap() {
           style={{ animation: "pulse 2.5s infinite" }}
         />
 
-        <span
-          className="absolute left-[70%] top-[20%] w-1.5 h-1.5 rounded-full bg-[#5FAF5F] animate-ping"
-        />
+        <span className="absolute left-[70%] top-[20%] w-1.5 h-1.5 rounded-full bg-[#5FAF5F] animate-ping" />
 
         <span
           className="absolute right-[18%] top-[38%] w-1 h-1 rounded-full bg-[#5FAF5F]"
           style={{ animation: "pulse 3s infinite" }}
         />
 
-        <span
-          className="absolute left-[15%] bottom-[30%] w-1 h-1 rounded-full bg-[#5FAF5F] animate-ping"
-        />
+        <span className="absolute left-[15%] bottom-[30%] w-1 h-1 rounded-full bg-[#5FAF5F] animate-ping" />
 
-        <span
-          className="absolute right-[25%] bottom-[22%] w-1.5 h-1.5 rounded-full bg-[#5FAF5F] animate-ping"
-        />
-
+        <span className="absolute right-[25%] bottom-[22%] w-1.5 h-1.5 rounded-full bg-[#5FAF5F] animate-ping" />
       </div>
-
 
       {/* ================================================= */}
       {/* MAP CONTAINER */}
       {/* ================================================= */}
 
       <div className="relative flex items-center justify-center">
-
         {/* Map glow */}
         <div
           className="
@@ -120,7 +108,6 @@ export default function PakistanMap() {
           }}
         />
 
-
         {/* ================================================= */}
         {/* PAKISTAN */}
         {/* ================================================= */}
@@ -139,24 +126,16 @@ export default function PakistanMap() {
           "
         />
 
-
         {/* ================================================= */}
         {/* NETWORK NODES */}
         {/* ================================================= */}
 
         <div className="absolute inset-0 z-20 pointer-events-none">
-
-          <Node left="46%" top="34%" delay="0s" />
-          <Node left="53%" top="42%" delay="0.8s" />
-          <Node left="42%" top="48%" delay="1.4s" />
           <Node left="57%" top="55%" delay="0.5s" />
           <Node left="48%" top="61%" delay="1.8s" />
           <Node left="38%" top="57%" delay="1s" />
           <Node left="62%" top="47%" delay="2s" />
-          <Node left="50%" top="72%" delay="1.2s" />
-
         </div>
-
 
         {/* ================================================= */}
         {/* LOCATION PIN */}
@@ -172,7 +151,6 @@ export default function PakistanMap() {
             -translate-y-1/2
           "
         >
-
           {/* Scan rings */}
 
           <div
@@ -187,11 +165,7 @@ export default function PakistanMap() {
               border-[#5FAF5F]
               transition-all
               duration-[2200ms]
-              ${
-                scan
-                  ? "w-[300px] h-[300px] opacity-0"
-                  : "w-16 h-16 opacity-20"
-              }
+              ${scan ? "w-[300px] h-[300px] opacity-0" : "w-16 h-16 opacity-20"}
             `}
           />
 
@@ -207,14 +181,9 @@ export default function PakistanMap() {
               border-[#5FAF5F]
               transition-all
               duration-[1800ms]
-              ${
-                scan
-                  ? "w-[220px] h-[220px] opacity-0"
-                  : "w-10 h-10 opacity-30"
-              }
+              ${scan ? "w-[220px] h-[220px] opacity-0" : "w-10 h-10 opacity-30"}
             `}
           />
-
 
           {/* Pin glow */}
 
@@ -247,15 +216,10 @@ export default function PakistanMap() {
               animate-pinFloat
             "
           >
-
             <FiMapPin className="text-[#5FAF5F] text-2xl" />
-
           </div>
-
         </div>
-
       </div>
-
 
       {/* ================================================= */}
       {/* SCANNING LINE */}
@@ -276,7 +240,6 @@ export default function PakistanMap() {
           "
         />
       )}
-
 
       {/* ================================================= */}
       {/* STATUS */}
@@ -302,19 +265,15 @@ export default function PakistanMap() {
           whitespace-nowrap
         "
       >
-
         <span className="w-2 h-2 rounded-full bg-[#5FAF5F] animate-pulse" />
 
         <span className="text-xs font-semibold tracking-wider text-[#0D3B0D]">
           GEOSPATIAL SYSTEM ACTIVE
         </span>
-
       </div>
-
     </div>
   );
 }
-
 
 /* ================================================= */
 /* NETWORK NODE */

@@ -94,27 +94,38 @@ export default function VoicePage() {
   // ===============================
 
   const storeAudioForAnalysis = (file) => {
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      try {
-        sessionStorage.setItem(
-          "nishaan_voice_audio",
-          JSON.stringify({
-            data: reader.result,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-          }),
-        );
-      } catch (error) {
-        console.error("Could not store audio:", error);
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        reject(new Error("No file provided."));
+        return;
       }
-    };
 
-    reader.readAsDataURL(file);
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        try {
+          sessionStorage.setItem(
+            "nishaan_voice_audio",
+            JSON.stringify({
+              data: reader.result,
+              name: file.name,
+              type: file.type,
+              size: file.size,
+            }),
+          );
+          resolve();
+        } catch (error) {
+          console.error("Could not store audio:", error);
+          reject(error);
+        }
+      };
+
+      reader.onerror = () => {
+        reject(new Error("Failed to read audio file."));
+      };
+
+      reader.readAsDataURL(file);
+    });
   };
 
   // ===============================
@@ -240,7 +251,7 @@ export default function VoicePage() {
   // CONTINUE TO ANALYSIS
   // ===============================
 
-  const handleAnalyzeVoice = () => {
+  const handleAnalyzeVoice = async () => {
     const file = audioFileRef.current || audioFile;
 
     if (!file) {
@@ -248,9 +259,13 @@ export default function VoicePage() {
       return;
     }
 
-    storeAudioForAnalysis(file);
-
-    window.location.href = "/voice/analyzing";
+    try {
+      await storeAudioForAnalysis(file);
+      window.location.href = "/voice/analyzing";
+    } catch (error) {
+      console.error("[Nishaan] Could not prepare audio:", error);
+      setRecordingError("Could not prepare audio for analysis. Please try again.");
+    }
   };
 
   return (

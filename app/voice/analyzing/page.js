@@ -26,7 +26,8 @@ export default function VoiceAnalyzingPage() {
   useEffect(() => {
     const stored = sessionStorage.getItem("nishaan_voice_audio");
     if (!stored) {
-      apiDoneRef.current = true;
+      // No audio data — redirect back to the voice input page
+      router.replace("/voice");
       return;
     }
 

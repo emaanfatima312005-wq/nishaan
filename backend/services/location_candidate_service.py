@@ -201,15 +201,119 @@ class LocationCandidateService:
         landmarks: list[str] | None = None,
         place_names: list[str] | None = None,
         house_number: str | None = None,
+        visible_text: list[str] | None = None,
     ):
 
         landmarks = landmarks or []
         place_names = place_names or []
+        visible_text = visible_text or []
 
         candidates = []
 
         # ----------------------------------------------------
-        # Search explicit street/locality evidence first.
+        # 1. OCR TEXT — FREE-FORM NOMINATIM SEARCH
+        # ----------------------------------------------------
+        # Each visible text item is searched as an
+        # exact_query against Nominatim.  This is a
+        # free-form search across all of Pakistan,
+        # not constrained by city or street context.
+        # This is the PRIMARY search strategy because
+        # real text read from the image is the most
+        # reliable evidence.
+
+        ocr_queries = []
+
+        for text_item in visible_text[:10]:
+
+            if not text_item or not text_item.strip():
+                continue
+
+            cleaned = text_item.strip()
+
+            if len(cleaned) < 3:
+                continue
+
+            # Skip pure numbers (phone numbers without
+            # names, plot numbers, etc.)
+            if cleaned.replace("-", "").replace(
+                " ", ""
+            ).isdigit():
+                continue
+
+            ocr_queries.append(cleaned)
+
+        for query in ocr_queries:
+
+            try:
+
+                results = await (
+                    GeocodingService.search(
+                        exact_query=query,
+                    )
+                )
+
+                for result in results:
+
+                    latitude = result.get("lat")
+                    longitude = result.get("lon")
+
+                    if (
+                        latitude is None
+                        or longitude is None
+                    ):
+                        continue
+
+                    candidates.append(
+                        {
+                            "latitude": float(
+                                latitude
+                            ),
+                            "longitude": float(
+                                longitude
+                            ),
+                            "display_name": result.get(
+                                "display_name"
+                            ),
+                            "province": (
+                                result.get(
+                                    "address", {},
+                                ).get("state")
+                            ),
+                            "city": (
+                                result.get(
+                                    "address", {},
+                                ).get("city")
+                            ),
+                            "town": (
+                                result.get(
+                                    "address", {},
+                                ).get("town")
+                            ),
+                            "area": (
+                                result.get(
+                                    "address", {},
+                                ).get("suburb")
+                            ),
+                            "street": (
+                                result.get(
+                                    "address", {},
+                                ).get("road")
+                            ),
+                            "search_query": query,
+                            "source": "ocr_exact",
+                        }
+                    )
+
+            except Exception as e:
+
+                print(
+                    "OCR SEARCH ERROR:",
+                    query,
+                    str(e),
+                )
+
+        # ----------------------------------------------------
+        # 2. STRUCTURED SEARCHES (secondary strategy)
         # ----------------------------------------------------
 
         searches = []
@@ -247,10 +351,31 @@ class LocationCandidateService:
                 )
 
         # ----------------------------------------------------
-        # Use existing Nominatim service for structured search.
+        # 3. OCR WITH CITY CONTEXT (fallback)
+        # ----------------------------------------------------
+        # For OCR items that didn't match via exact_query,
+        # try again with city context to narrow results.
+
+        for text_item in visible_text[:5]:
+
+            if not text_item or not text_item.strip():
+                continue
+
+            cleaned = text_item.strip()
+
+            if len(cleaned) < 3:
+                continue
+
+            if city:
+                searches.append(
+                    f"{cleaned}, {city}, Pakistan"
+                )
+
+        # ----------------------------------------------------
+        # 4. EXECUTE STRUCTURED SEARCHES
         # ----------------------------------------------------
 
-        for query in searches[:5]:
+        for query in searches[:10]:
 
             try:
 
@@ -451,6 +576,19 @@ class LocationCandidateService:
             or []
         )
 
+        # Check whether the vision result has
+        # actual text evidence or high enough
+        # confidence to trust its city/street.
+        # This prevents hallucinated city names
+        # from triggering OSM text searches that
+        # would validate the hallucination.
+        _text_evidence_or_high_conf = bool(
+            visible_text
+        ) or (
+            vision_result.get("confidence", 0)
+            or 0
+        ) >= 50
+
         # ====================================================
         # 1. STREETCLIP SIGNALS
         # ====================================================
@@ -536,7 +674,7 @@ class LocationCandidateService:
 
             if pakistan_probability >= 0.80:
 
-                score += 20
+                score += 25
 
                 reasons.append(
                     "StreetCLIP strongly identifies Pakistan"
@@ -544,7 +682,7 @@ class LocationCandidateService:
 
             elif pakistan_probability >= 0.50:
 
-                score += 10
+                score += 15
 
                 reasons.append(
                     "StreetCLIP supports Pakistan"
@@ -578,7 +716,7 @@ class LocationCandidateService:
                 )
             ):
 
-                score += 15
+                score += 25
 
                 reasons.append(
                     "province agrees with StreetCLIP"
@@ -631,7 +769,7 @@ class LocationCandidateService:
 
             if geoclip_probability >= 0.10:
 
-                score += 20
+                score += 25
 
                 reasons.append(
                     "strong GeoCLIP candidate"
@@ -639,7 +777,7 @@ class LocationCandidateService:
 
             elif geoclip_probability >= 0.03:
 
-                score += 12
+                score += 18
 
                 reasons.append(
                     "moderate GeoCLIP candidate"
@@ -647,7 +785,7 @@ class LocationCandidateService:
 
             else:
 
-                score += 5
+                score += 8
 
                 reasons.append(
                     "weak GeoCLIP candidate"
@@ -695,7 +833,11 @@ class LocationCandidateService:
                             "city"
                         )
                     ),
-                    street=street,
+                    street=(
+                        street
+                        if _text_evidence_or_high_conf
+                        else None
+                    ),
                     landmarks=landmarks,
                 )
             )
@@ -713,7 +855,7 @@ class LocationCandidateService:
 
                 if best_place["score"] >= 30:
 
-                    best_candidate["score"] += 10
+                    best_candidate["score"] += 15
 
                     best_candidate[
                         "reasons"
@@ -728,10 +870,16 @@ class LocationCandidateService:
         text_candidates = []
 
         if (
-            city
-            or street
-            or place_names
-            or landmarks
+            visible_text
+            or (
+                _text_evidence_or_high_conf
+                and (
+                    city
+                    or street
+                    or place_names
+                    or landmarks
+                )
+            )
         ):
 
             text_candidates = (
@@ -744,6 +892,7 @@ class LocationCandidateService:
                     landmarks=landmarks,
                     place_names=place_names,
                     house_number=house_number,
+                    visible_text=visible_text,
                 )
             )
 
@@ -804,7 +953,7 @@ class LocationCandidateService:
                     in cls.normalize(street)
                 ):
 
-                    candidate_score += 40
+                    candidate_score += 55
 
                     reasons.append(
                         "street matches user evidence"
@@ -831,10 +980,42 @@ class LocationCandidateService:
                         in display_name
                     ):
 
-                        candidate_score += 20
+                        candidate_score += 30
 
                         reasons.append(
                             f"locality matches: {name}"
+                        )
+
+                        break
+
+            # Visible text (OCR evidence from image)
+            if visible_text:
+
+                display_name = cls.normalize(
+                    text_candidate.get(
+                        "display_name"
+                    )
+                    or ""
+                )
+
+                for text_item in visible_text:
+
+                    normalized_text = (
+                        cls.normalize(text_item)
+                    )
+
+                    if (
+                        normalized_text
+                        and len(normalized_text) >= 3
+                        and normalized_text
+                        in display_name
+                    ):
+
+                        candidate_score += 35
+
+                        reasons.append(
+                            f"visible text matches: "
+                            f"{text_item}"
                         )
 
                         break
@@ -855,7 +1036,7 @@ class LocationCandidateService:
                     in display_name
                 ):
 
-                    candidate_score += 30
+                    candidate_score += 45
 
                     reasons.append(
                         "house number appears in address"
@@ -877,6 +1058,105 @@ class LocationCandidateService:
             scored_candidates
             + text_candidates
         )
+
+        # ====================================================
+        # 8b. CROSS-EVIDENCE BONUS
+        # ====================================================
+        # When independent evidence sources agree on a
+        # city or province, boost both candidates.
+
+        if len(all_candidates) >= 2:
+
+            for i, c1 in enumerate(all_candidates):
+
+                for j, c2 in enumerate(all_candidates):
+
+                    if i >= j:
+                        continue
+
+                    c1_city = cls.normalize(
+                        c1.get("city") or ""
+                    )
+
+                    c2_city = cls.normalize(
+                        c2.get("city") or ""
+                    )
+
+                    if (
+                        c1_city
+                        and c2_city
+                        and len(c1_city) >= 3
+                        and len(c2_city) >= 3
+                        and (
+                            c1_city in c2_city
+                            or c2_city in c1_city
+                        )
+                    ):
+
+                        c1["score"] = (
+                            c1.get("score", 0) + 20
+                        )
+
+                        c2["score"] = (
+                            c2.get("score", 0) + 20
+                        )
+
+                        c1.setdefault(
+                            "reasons", []
+                        ).append(
+                            "cross-evidence: city "
+                            "confirmed by multiple "
+                            "sources"
+                        )
+
+                        c2.setdefault(
+                            "reasons", []
+                        ).append(
+                            "cross-evidence: city "
+                            "confirmed by multiple "
+                            "sources"
+                        )
+
+        # ====================================================
+        # 8c. STREETCLIP CITY BOOST
+        # ====================================================
+        # If StreetCLIP independently identified a city
+        # and a candidate is in that city, give it an
+        # additional boost.
+
+        if streetclip_city:
+
+            normalized_sc_city = cls.normalize(
+                streetclip_city
+            )
+
+            for candidate in all_candidates:
+
+                candidate_city = cls.normalize(
+                    candidate.get("city") or ""
+                )
+
+                if (
+                    candidate_city
+                    and normalized_sc_city
+                    and len(normalized_sc_city) >= 3
+                    and (
+                        normalized_sc_city
+                        in candidate_city
+                        or candidate_city
+                        in normalized_sc_city
+                    )
+                ):
+
+                    candidate["score"] = (
+                        candidate.get("score", 0) + 15
+                    )
+
+                    candidate.setdefault(
+                        "reasons", []
+                    ).append(
+                        "StreetCLIP city confirmation"
+                    )
 
         all_candidates.sort(
             key=lambda item: item.get(
@@ -913,8 +1193,11 @@ class LocationCandidateService:
                 "supporting_places": [],
             }
 
+        # Cap at 75: this service is one evidence
+        # source.  The evidence fusion step produces
+        # the actual final confidence.
         final_score = min(
-            100,
+            75,
             round(
                 final_candidate.get(
                     "score",

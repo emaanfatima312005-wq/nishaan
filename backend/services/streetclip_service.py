@@ -239,23 +239,52 @@ class StreetCLIPService:
         image_bytes: bytes,
     ):
         cities = [
+            # Punjab — major cities
             "Lahore, Punjab, Pakistan",
             "Rawalpindi, Punjab, Pakistan",
-            "Islamabad, Pakistan",
             "Faisalabad, Punjab, Pakistan",
             "Multan, Punjab, Pakistan",
             "Gujranwala, Punjab, Pakistan",
             "Sialkot, Punjab, Pakistan",
+            "Bahawalpur, Punjab, Pakistan",
+            "Sahiwal, Punjab, Pakistan",
+            "Rahim Yar Khan, Punjab, Pakistan",
+            "Jhelum, Punjab, Pakistan",
+            "Murree, Punjab, Pakistan",
+
+            # Sindh
             "Karachi, Sindh, Pakistan",
             "Hyderabad, Sindh, Pakistan",
+            "Sukkur, Sindh, Pakistan",
+            "Larkana, Sindh, Pakistan",
+            "Nawabshah, Sindh, Pakistan",
+
+            # Khyber Pakhtunkhwa
             "Peshawar, Khyber Pakhtunkhwa, Pakistan",
-            "Quetta, Balochistan, Pakistan",
             "Abbottabad, Khyber Pakhtunkhwa, Pakistan",
-            "Murree, Punjab, Pakistan",
+            "Mardan, Khyber Pakhtunkhwa, Pakistan",
+            "Swat, Khyber Pakhtunkhwa, Pakistan",
+            "Nowshera, Khyber Pakhtunkhwa, Pakistan",
+            "Dera Ismail Khan, Khyber Pakhtunkhwa, Pakistan",
+
+            # Balochistan
+            "Quetta, Balochistan, Pakistan",
+            "Gwadar, Balochistan, Pakistan",
+
+            # Islamabad Capital Territory
+            "Islamabad, Pakistan",
+
+            # Azad Kashmir
+            "Mirpur, Azad Kashmir, Pakistan",
+            "Muzaffarabad, Azad Kashmir, Pakistan",
+
+            # Gilgit-Baltistan
+            "Gilgit, Gilgit-Baltistan, Pakistan",
+            "Skardu, Gilgit-Baltistan, Pakistan",
         ]
 
         return cls.classify(
             image_bytes=image_bytes,
             labels=cities,
-            top_k=8,
+            top_k=10,
         )

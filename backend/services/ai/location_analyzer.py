@@ -289,34 +289,75 @@ USER CLUE:
         )
 
         prompt = """
-You are Nishaan, an AI geographic clue extraction
-system for Pakistan.
+You are Nishaan, an expert AI geographic clue extraction
+system specialized in Pakistan.
 
-Analyze the uploaded image carefully.
+Analyze the uploaded image carefully and systematically.
 
-Look for:
+STEP 1: First, scan the entire image for ALL visible text:
+- road signs and milestones
+- street name plates
+- shop signboards and banners
+- mosque name boards
+- school / college name boards
+- building name plates
+- vehicle number plates
+- Urdu text on walls, signs, banners
+- English text on signs, shop fronts
+- phone numbers, addresses on signboards
+- any other readable text
 
-- road signs
-- street names
-- road names
-- Urdu text
-- English text
-- shop names
-- mosque names
-- school names
-- market names
-- building names
-- landmarks
-- phone numbers
-- vehicle markings
-- distinctive architecture
-- mountains
-- coastline
-- other useful geographic evidence
+OCR is extremely important. Read every visible text item
+exactly as it appears, preserving Urdu and English.
 
-OCR is important.
+EVERY readable text is a location clue:
+- A shop name like "Al-Madina Store" or "Karim
+  Electronics" can be searched on maps.
+- A phone number like "042-35761234" has area code
+  042 which means Lahore. Common Pakistan area codes:
+  021=Karachi, 042=Lahore, 051=Islamabad/Rawalpindi,
+  041=Faisalabad, 061=Multan, 091=Peshawar,
+  081=Quetta, 052=Sialkot, 044=Sahiwal.
+- A building name like "Panorama Centre" or
+  "Centaurus Mall" can be found on maps.
+- A mosque name like "Masjid-e-Bilal" can be
+  searched geographically.
+- A school/college name is often unique to one
+  locality.
+- Advertisements often mention the locality name.
+- Urdu business names and banners frequently
+  include the area name.
+- Even partial text like "...Road" or "...Chowk"
+  is a valuable clue.
 
-Try to read visible text exactly.
+Extract ALL readable text. Do not skip any sign,
+banner, board, or text just because it seems
+generic. Each piece of text will be searched
+against map data to find a match.
+
+STEP 2: Identify geographic evidence:
+- distinctive architecture style
+  (Mughal, British colonial, modern Pakistani, etc.)
+- vegetation type
+  (palm trees, pine trees, barren, agricultural)
+- mountain or terrain profile
+- road characteristics
+  (motorway, GT Road, narrow gali, boulevard)
+- vehicle types and license plate patterns
+- utility infrastructure
+  (WAPDA poles, Sui Gas meters, PTCL boxes)
+- construction style
+  (brick, concrete, marble, tile work)
+
+STEP 3: Determine location based on evidence:
+- If visible text names a specific city, area, or street,
+  extract it confidently.
+- If a shop sign shows an address like
+  "Shop 5, Main Bazaar, Saddar", extract each part.
+- If a milestone or kilometer stone is visible,
+  extract the distance and destination.
+- If architectural or environmental features strongly
+  suggest a specific region, note them in visual_clues.
 
 HOUSE NUMBERS ARE IMPORTANT.
 
@@ -347,12 +388,49 @@ Do NOT invent:
 - landmark names
 - coordinates
 
-A generic Pakistani-looking street is NOT enough
-to identify an exact city or street.
+However, when you see clear evidence such as:
+- a road sign naming a city
+- a shop signboard with an address
+- a milestone indicating a nearby town
+- a recognizable landmark building
+
+you MUST extract that evidence into the correct fields.
+Being cautious is good, but ignoring clear visible text
+or signs defeats the purpose of analysis.
+
+A generic Pakistani-looking street without specific
+text evidence is NOT enough to identify a city.
+But if you can read text that names a place, USE IT.
+
+CRITICAL ANTI-HALLUCINATION RULES:
+These override everything above.
+
+- NEVER output a city, area, town, or street name
+  based solely on what the scenery looks like.
+- ONLY output city/area/town/street/province when:
+  (a) You can READ that exact name in visible text
+      (sign, board, milestone, shop name, etc.), OR
+  (b) The image contains a universally recognized
+      landmark (Badshahi Mosque, Faisal Mosque,
+      Minar-e-Pakistan, Mazar-e-Quaid, etc.)
+- Generic Pakistani features (brick buildings, narrow
+  streets, rickshaws, trucks, Urdu fonts, bazaar
+  scenes, concrete houses, electricity poles) are NOT
+  evidence of ANY specific city or area.
+- When in doubt, leave city, town, area, street, and
+  province as null. Put your observations in
+  visual_clues instead.
+- It is FAR better to return null fields with an honest
+  low confidence than to guess a wrong city name.
+- If you output a city name, your reasoning field MUST
+  quote the exact visible text or name the universally
+  recognized landmark that proves it.
+- A wrong city name is MUCH worse than no city name.
 
 Return ONLY valid JSON:
 
 {
+  "reasoning": "explain what you observe and why you filled each field",
   "province": null,
   "city": null,
   "town": null,
@@ -369,18 +447,31 @@ Return ONLY valid JSON:
 
 Rules:
 
+- reasoning must explain what visual evidence led to
+  each geographic field you filled. If a field is null,
+  explain why you could not determine it.
 - Exact visible names go into visible_text.
 - Named localities whose administrative level is unclear
   go into place_names.
 - Useful geographic landmarks go into landmarks.
 - Generic visual observations go into visual_clues.
-- Do not guess missing geographic fields.
+- Include regional indicators in visual_clues
+  (e.g. "Mughal-era architecture", "Punjabi-style truck
+  art", "Karachi-style high-rise", "northern mountain
+  terrain").
+- Do not guess missing geographic fields without
+  visible evidence.
 - Maximum 8 place_names.
 - Maximum 8 landmarks.
-- Maximum 10 visible_text items.
+- Maximum 15 visible_text items.
 - Maximum 8 visual_clues.
 - description must be one concise sentence.
 - confidence must be an integer from 0 to 100.
+  Rate confidence based on:
+  - 80-100: Clear text or signs naming the exact location
+  - 50-79: Strong evidence narrowing to a city or area
+  - 20-49: Some evidence but not enough for exact location
+  - 0-19: No useful geographic evidence found
 """
 
         response = client.chat.completions.create(
@@ -390,10 +481,13 @@ Rules:
                 {
                     "role": "system",
                     "content": (
-                        "You extract geographic clues from "
-                        "images. "
-                        "Be accurate and never invent "
-                        "specific locations."
+                        "You are an expert geographic "
+                        "image analyst for Pakistan. "
+                        "Read ALL visible text carefully. "
+                        "Extract every piece of geographic "
+                        "evidence from the image. "
+                        "Be thorough but never invent "
+                        "locations without visual evidence."
                     ),
                 },
                 {
@@ -413,11 +507,9 @@ Rules:
                 },
             ],
 
-            temperature=0.2,
+            temperature=0.1,
 
-            max_completion_tokens=2048,
-
-            reasoning_effort="none",
+            max_completion_tokens=3072,
 
             response_format={
                 "type": "json_object"
@@ -464,6 +556,39 @@ Rules:
                 result.get("confidence")
             )
         )
+
+        # ------------------------------------------
+        # ANTI-HALLUCINATION: confidence gating
+        # ------------------------------------------
+        # The vision model sometimes hallucinates specific
+        # city/area/street names from generic Pakistani
+        # scenery.  When there is NO visible text in
+        # the image, geographic fields are unreliable
+        # and must be cleared.
+        # visible_text items are always preserved because
+        # they represent actual OCR output.
+
+        _has_text_evidence = bool(
+            result.get("visible_text")
+        )
+
+        _vision_conf = result.get("confidence", 0) or 0
+
+        if (
+            not _has_text_evidence
+            and _vision_conf < 50
+        ):
+            result["city"] = None
+            result["province"] = None
+            result["town"] = None
+            result["area"] = None
+            result["street"] = None
+            result["house_number"] = None
+            result["place_names"] = []
+            result["landmarks"] = []
+            result["confidence"] = max(
+                _vision_conf, 10
+            )
 
         return result
 

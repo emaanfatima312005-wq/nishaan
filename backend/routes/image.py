@@ -22,6 +22,14 @@ from services.location_candidate_service import (
     LocationCandidateService,
 )
 
+from services.universal_location_resolver import (
+    UniversalLocationResolver,
+)
+
+from services.image_evidence_fusion import (
+    ImageEvidenceFusion,
+)
+
 
 router = APIRouter(
     prefix="/api/analyze",
@@ -144,6 +152,7 @@ async def analyze_image(
         longitude = None
 
         gps_source = None
+        exif_location = None
 
         # ====================================================
         # 7. EXIF GPS
@@ -269,13 +278,13 @@ async def analyze_image(
         try:
 
             geoclip_predictions = (
-                GeoCLIPService.predict(
+                GeoCLIPService.predict_pakistan(
                     image_bytes=image_bytes,
                     filename=(
                         image.filename
                         or "image.jpg"
                     ),
-                    top_k=5,
+                    top_k=10,
                 )
             )
 
@@ -381,239 +390,347 @@ async def analyze_image(
             print("=" * 60)
 
         # ====================================================
-        # 12. CHOOSE FINAL COORDINATES
+        # 11b. UNIVERSAL RESOLVER — PRECISION PASS
         # ====================================================
 
-        # EXIF always wins because it is actual metadata
-        # attached to the photograph.
+        # LocationCandidateService finds the best geographic
+        # area using GeoCLIP + StreetCLIP + vision evidence,
+        # but its coordinates come from GeoCLIP gallery
+        # points which are approximate.
+        #
+        # UniversalLocationResolver takes the combined
+        # evidence (city, area, street, landmarks, place
+        # names) and performs precise OSM-based geocoding
+        # to find exact street-level coordinates.
 
-        if (
-            latitude is not None
-            and longitude is not None
-        ):
+        precise_location = None
+        resolver_city = None
 
-            gps_source = "exif"
+        if final_location and gps_source is None:
 
-        elif final_location:
+            try:
 
-            resolved_latitude = (
-                final_location.get(
-                    "latitude"
-                )
-            )
-
-            resolved_longitude = (
-                final_location.get(
-                    "longitude"
-                )
-            )
-
-            if (
-                resolved_latitude is not None
-                and resolved_longitude is not None
-            ):
-
-                latitude = (
-                    resolved_latitude
+                resolver_province = (
+                    final_location.get("province")
+                    or vision_result.get("province")
                 )
 
-                longitude = (
-                    resolved_longitude
+                resolver_city = (
+                    final_location.get("city")
+                    or vision_result.get("city")
                 )
 
-                gps_source = (
-                    "candidate_resolver"
+                resolver_town = (
+                    final_location.get("town")
+                    or vision_result.get("town")
                 )
+
+                resolver_area = (
+                    final_location.get("area")
+                    or vision_result.get("area")
+                )
+
+                resolver_street = (
+                    final_location.get("street")
+                    or vision_result.get("street")
+                )
+
+                resolver_house_number = (
+                    final_location.get("house_number")
+                    or vision_result.get("house_number")
+                )
+
+                resolver_place_names = list(set(
+                    (vision_result.get("place_names", []) or [])
+                    + (final_location.get("place_names", []) or [])
+                ))
+
+                resolver_landmarks = list(set(
+                    (vision_result.get("landmarks", []) or [])
+                    + (final_location.get("landmarks", []) or [])
+                ))
+
+                precise_location = (
+                    await UniversalLocationResolver.resolve(
+                        province=resolver_province,
+                        city=resolver_city,
+                        town=resolver_town,
+                        area=resolver_area,
+                        street=resolver_street,
+                        house_number=(
+                            resolver_house_number
+                        ),
+                        place_names=(
+                            resolver_place_names
+                        ),
+                        landmarks=(
+                            resolver_landmarks
+                        ),
+                    )
+                )
+
+                print("=" * 60)
+                print(
+                    "UNIVERSAL RESOLVER PRECISION PASS"
+                )
+                print(precise_location)
+                print("=" * 60)
+
+                # Use resolver's precise coordinates
+                # when it succeeds.
+
+                precise_lat = (
+                    precise_location.get("latitude")
+                )
+
+                precise_lon = (
+                    precise_location.get("longitude")
+                )
+
+                if (
+                    precise_lat is not None
+                    and precise_lon is not None
+                ):
+
+                    latitude = precise_lat
+                    longitude = precise_lon
+                    gps_source = "universal_resolver"
+
+                # Capture resolver city BEFORE the
+                # final_location overwrite below.
+                # Used for contradiction detection in
+                # the evidence fusion step.
+                resolver_city = (
+                    precise_location.get("city")
+                )
+
+                # Overwrite final_location with
+                # resolver's more accurate fields.
+
+                final_location = {
+                    **final_location,
+                    "province": (
+                        precise_location.get(
+                            "province"
+                        )
+                        or final_location.get(
+                            "province"
+                        )
+                    ),
+                    "city": (
+                        precise_location.get(
+                            "city"
+                        )
+                        or final_location.get(
+                            "city"
+                        )
+                    ),
+                    "town": (
+                        precise_location.get(
+                            "town"
+                        )
+                        or final_location.get(
+                            "town"
+                        )
+                    ),
+                    "area": (
+                        precise_location.get(
+                            "area"
+                        )
+                        or final_location.get(
+                            "area"
+                        )
+                    ),
+                    "street": (
+                        precise_location.get(
+                            "street"
+                        )
+                        or final_location.get(
+                            "street"
+                        )
+                    ),
+                    "house_number": (
+                        precise_location.get(
+                            "house_number"
+                        )
+                        or final_location.get(
+                            "house_number"
+                        )
+                    ),
+                    "latitude": (
+                        precise_lat
+                        or final_location.get(
+                            "latitude"
+                        )
+                    ),
+                    "longitude": (
+                        precise_lon
+                        or final_location.get(
+                            "longitude"
+                        )
+                    ),
+                    "confidence": max(
+                        final_location.get(
+                            "confidence", 0
+                        ),
+                        precise_location.get(
+                            "confidence", 0
+                        ),
+                    ),
+                    "evidence": (
+                        final_location.get(
+                            "evidence", []
+                        )
+                        + precise_location.get(
+                            "evidence", []
+                        )
+                    ),
+                    "supporting_places": (
+                        precise_location.get(
+                            "supporting_places", []
+                        )
+                        or final_location.get(
+                            "supporting_places", []
+                        )
+                    ),
+                    "candidate_display_name": (
+                        precise_location.get(
+                            "candidate_display_name"
+                        )
+                        or final_location.get(
+                            "candidate_display_name"
+                        )
+                    ),
+                }
+
+            except Exception as resolver_error:
+
+                print("=" * 60)
+                print(
+                    "UNIVERSAL RESOLVER ERROR"
+                )
+                print(
+                    "ERROR TYPE:",
+                    type(resolver_error).__name__,
+                )
+                print(
+                    "ERROR:",
+                    str(resolver_error),
+                )
+                print("=" * 60)
 
         # ====================================================
-        # 13. FINAL LOCATION FIELDS
+        # 12. EVIDENCE FUSION
         # ====================================================
+        #
+        # Combine all evidence signals into one final
+        # confidence score using the evidence fusion
+        # system.  This replaces the old max-of-sources
+        # approach with proper contradiction detection
+        # and multi-source agreement requirements.
+        #
+        # Evidence sources:
+        #   EXIF GPS, Groq Vision, GeoCLIP, StreetCLIP,
+        #   LocationCandidateService, UniversalLocationResolver
+        #
+        # Status levels:
+        #   verified  - high confidence, 3+ sources agree
+        #   likely    - good confidence, some support
+        #   candidate - partial evidence
+        #   uncertain - weak evidence or contradictions
 
-        final_province = (
-            final_location.get(
-                "province"
-            )
-            if final_location
-            else vision_result.get(
-                "province"
-            )
+        fused = ImageEvidenceFusion.fuse(
+            exif_gps=(
+                exif_location
+                if gps_source == "exif"
+                else None
+            ),
+            vision_result=vision_result,
+            geoclip_predictions=geoclip_predictions,
+            streetclip_country=streetclip_country,
+            streetclip_region=streetclip_region,
+            streetclip_city=streetclip_city,
+            candidate_result=final_location,
+            precise_location=precise_location,
+            resolver_city=resolver_city,
         )
 
-        final_city = (
-            final_location.get(
-                "city"
-            )
-            if final_location
-            else vision_result.get(
-                "city"
-            )
-        )
+        latitude = fused["latitude"]
+        longitude = fused["longitude"]
+        gps_source = fused["gps_source"]
+        final_confidence = fused["confidence"]
+        location_status = fused["location_status"]
+        contradictions = fused["contradictions"]
+        evidence_count = fused["evidence_count"]
 
-        final_town = (
-            final_location.get(
-                "town"
-            )
-            if final_location
-            else vision_result.get(
-                "town"
-            )
-        )
+        final_province = fused["province"]
+        final_city = fused["city"]
+        final_town = fused["town"]
+        final_area = fused["area"]
+        final_street = fused["street"]
+        final_house_number = fused["house_number"]
 
-        final_area = (
-            final_location.get(
-                "area"
-            )
-            if final_location
-            else vision_result.get(
-                "area"
-            )
-        )
-
-        final_street = (
-            final_location.get(
-                "street"
-            )
-            if final_location
-            else vision_result.get(
-                "street"
-            )
-        )
-
-        final_house_number = (
-            final_location.get(
-                "house_number"
-            )
-            if final_location
-            else vision_result.get(
-                "house_number"
-            )
-        )
-
-        final_confidence = (
-            final_location.get(
-                "confidence"
-            )
-            if final_location
-            else vision_result.get(
-                "confidence",
-                0,
-            )
-        )
+        print("=" * 60)
+        print("EVIDENCE FUSION RESULT")
+        print("Confidence:", final_confidence)
+        print("Status:", location_status)
+        print("Contradictions:", contradictions)
+        print("Evidence signals:", evidence_count)
+        print("=" * 60)
 
         # ====================================================
-        # 14. RETURN FINAL RESULT
+        # 13. RETURN FINAL RESULT
         # ====================================================
 
         return {
-
             "status": "success",
-
-            "request_id": (
-                location_request.id
-            ),
-
+            "location_status": location_status,
+            "request_id": location_request.id,
             "filename": image.filename,
 
-            # =================================================
-            # FINAL LOCATION
-            # =================================================
-
+            # --- FINAL LOCATION ---
             "province": final_province,
-
             "city": final_city,
-
             "town": final_town,
-
             "area": final_area,
-
             "street": final_street,
-
             "house_number": final_house_number,
-
             "latitude": latitude,
-
             "longitude": longitude,
-
             "gps_source": gps_source,
-
             "confidence": final_confidence,
+            "contradictions": contradictions,
+            "evidence_count": evidence_count,
 
-            # =================================================
-            # USER / IMAGE EVIDENCE
-            # =================================================
-
-            "place_names": (
-                vision_result.get(
-                    "place_names",
-                    [],
-                )
+            # --- VISION EVIDENCE ---
+            "place_names": vision_result.get(
+                "place_names", []
+            ),
+            "landmarks": vision_result.get(
+                "landmarks", []
+            ),
+            "visible_text": vision_result.get(
+                "visible_text", []
+            ),
+            "visual_clues": vision_result.get(
+                "visual_clues", []
+            ),
+            "description": vision_result.get(
+                "description", ""
             ),
 
-            "landmarks": (
-                vision_result.get(
-                    "landmarks",
-                    [],
-                )
-            ),
+            # --- RESOLVER ---
+            "final_location": final_location,
 
-            "visible_text": (
-                vision_result.get(
-                    "visible_text",
-                    [],
-                )
-            ),
+            # --- GEOCLIP ---
+            "geoclip_coordinates": geoclip_coordinates,
+            "geoclip_predictions": geoclip_predictions,
 
-            "visual_clues": (
-                vision_result.get(
-                    "visual_clues",
-                    [],
-                )
-            ),
-
-            "description": (
-                vision_result.get(
-                    "description",
-                    "",
-                )
-            ),
-
-            # =================================================
-            # FINAL RESOLVER
-            # =================================================
-
-            "final_location": (
-                final_location
-            ),
-
-            # =================================================
-            # GEOCLIP
-            # =================================================
-
-            "geoclip_coordinates": (
-                geoclip_coordinates
-            ),
-
-            "geoclip_predictions": (
-                geoclip_predictions
-            ),
-
-            # =================================================
-            # STREETCLIP
-            # =================================================
-
+            # --- STREETCLIP ---
             "streetclip": {
-
-                "country": (
-                    streetclip_country
-                ),
-
-                "region": (
-                    streetclip_region
-                ),
-
-                "city": (
-                    streetclip_city
-                ),
+                "country": streetclip_country,
+                "region": streetclip_region,
+                "city": streetclip_city,
             },
         }
 

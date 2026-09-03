@@ -162,4 +162,18 @@ pnpm-debug.log*
 # Misc
 # -----------------------------
 .cache/
+<<<<<<< HEAD
 .temp/
+=======
+.temp/
+
+# -----------------------------
+# Large GeoNames data
+# -----------------------------
+
+backend/data/alternateNames.txt
+backend/data/alternateNames.zip
+
+# Backend runtime uploads
+backend/uploads/
+>>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889

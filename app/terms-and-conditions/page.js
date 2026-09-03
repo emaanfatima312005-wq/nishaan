@@ -9,6 +9,7 @@ import {
 
 export default function termsAndConditions() {
   return (
+<<<<<<< HEAD
     <main className="relative min-h-screen text-[#1A1A1A] overflow-hidden">
       {/* ================================================= */}
       {/* FULL PAGE BACKGROUND IMAGE */}
@@ -22,6 +23,9 @@ export default function termsAndConditions() {
         />
       </div>
 
+=======
+    <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">
+>>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
       {/* ================================================= */}
       {/* HEADER */}
       {/* ================================================= */}

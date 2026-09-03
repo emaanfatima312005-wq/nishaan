@@ -28,20 +28,7 @@ const MapView = dynamic(() => import("./MapView"), {
   ),
 });
 
-const locationData = {
-  province: "Punjab",
-  city: "Rawalpindi",
-  town: "Rawalpindi",
-  area: "Saddar",
-  street: "Bank Road",
-
-  // Temporary coordinates.
-  // Later these will come from your AI + geocoding API.
-  latitude: 33.6007,
-  longitude: 73.0679,
-
-  confidence: 92,
-};
+// No hardcoded location data — real API results only.
 
 const aiSteps = [
   {
@@ -75,6 +62,39 @@ export default function ResultPage() {
 
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
+  const [locationData, setLocationData] = useState(null);
+  const [apiError, setApiError] = useState(null);
+
+  // Read real API result from sessionStorage
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("nishaan_text_result");
+      if (!stored) return;
+
+      const result = JSON.parse(stored);
+
+      if (result.status === "error") {
+        setApiError(result.message || "Text analysis failed.");
+        return;
+      }
+
+      setLocationData({
+        province: result.province || "",
+        city: result.city || "",
+        town: result.town || "",
+        area: result.area || "",
+        street: result.street || "",
+        latitude: result.latitude,
+        longitude: result.longitude,
+        confidence: result.confidence ?? 0,
+        landmarks: result.landmarks || [],
+        place_names: result.place_names || [],
+      });
+    } catch (e) {
+      console.error("Could not read text result:", e);
+      setApiError("Could not read analysis result.");
+    }
+  }, []);
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -100,19 +120,82 @@ export default function ResultPage() {
   };
 
   const handleDirections = () => {
+    if (!locationData?.latitude || !locationData?.longitude) return;
+
     if (!userLocation) {
+<<<<<<< HEAD
       alert(
         "Please allow location access so Nishaan can calculate directions from your current location.",
       );
+=======
+      // Open Google Maps with just the destination
+      const url = `https://www.google.com/maps/search/?api=1&query=${locationData.latitude},${locationData.longitude}`;
+      window.open(url, "_blank");
+>>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
       return;
     }
 
-    const destination = `${locationData.latitude},${locationData.longitude}`;
-
-    const url = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${userLocation.latitude}%2C${userLocation.longitude}%3B${locationData.latitude}%2C${locationData.longitude}`;
-
+    // Open Google Maps with directions from user location
+    const url = `https://www.google.com/maps/dir/${userLocation.latitude},${userLocation.longitude}/${locationData.latitude},${locationData.longitude}`;
     window.open(url, "_blank");
   };
+
+  // Show loading state
+  if (locationData === null && apiError === null) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#fbfcf7] px-5">
+        <p className="text-sm text-[#1A1A1A]/60">Loading result...</p>
+      </main>
+    );
+  }
+
+  // Show API error
+  if (apiError) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
+        <p className="text-lg font-semibold text-[#0D3B0D]">
+          Text analysis failed.
+        </p>
+        <p className="max-w-md text-center text-sm text-[#1A1A1A]/60">
+          {apiError}
+        </p>
+        <button
+          onClick={() => {
+            sessionStorage.removeItem("nishaan_text_result");
+            router.push("/text");
+          }}
+          className="mt-2 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
+        >
+          <FiRefreshCw size={17} />
+          Search Again
+        </button>
+      </main>
+    );
+  }
+
+  // Show error if no coordinates from API
+  if (!locationData.latitude || !locationData.longitude) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
+        <p className="text-lg font-semibold text-[#0D3B0D]">
+          Location could not be verified.
+        </p>
+        <p className="text-sm text-[#1A1A1A]/60">
+          Nishaan could not find geographic coordinates for this description.
+        </p>
+        <button
+          onClick={() => {
+            sessionStorage.removeItem("nishaan_text_result");
+            router.push("/text");
+          }}
+          className="mt-2 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
+        >
+          <FiRefreshCw size={17} />
+          Search Again
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">
@@ -196,6 +279,11 @@ export default function ResultPage() {
                 longitude: locationData.longitude,
               }}
               userLocation={userLocation}
+              locationInfo={{
+                area: locationData.area,
+                city: locationData.city,
+                street: locationData.street,
+              }}
             />
 
             {/* Map badge */}

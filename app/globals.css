@@ -1007,10 +1007,20 @@ body {
 }
 /* ================= VOICE FREQUENCY ================= */
 
+<<<<<<< HEAD
 @keyframes voiceWave {
   0%,
   100% {
     transform: scaleY(0.9);
+=======
+}
+/* ================= VOICE FREQUENCY ================= */
+
+@keyframes voiceWave {
+  0%,
+  100% {
+    transform: scaleY(0.90);
+>>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
     opacity: 0.45;
   }
 
@@ -1043,6 +1053,10 @@ body {
   animation: orbit 18s linear infinite;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
 @keyframes scan-beam {
   0% {
     transform: translate(-50%, -100%) rotate(-90deg);
@@ -1070,4 +1084,8 @@ body {
 
 .animate-scan-beam {
   animation: scan-beam 4s linear infinite;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889

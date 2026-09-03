@@ -37,24 +37,69 @@ export default function ImageResultPage() {
     );
   }
 
+  // Handle API error gracefully
+  if (result.status === "error") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
+        <p className="text-lg font-semibold text-[#0D3B0D]">
+          Image analysis failed.
+        </p>
+        <p className="max-w-md text-center text-sm text-[#1A1A1A]/60">
+          {result.message || "The analysis could not be completed. Please try again."}
+        </p>
+        <Link
+          href="/image"
+          onClick={() => {
+            sessionStorage.removeItem("nishaanImage");
+            sessionStorage.removeItem("nishaanImageResult");
+          }}
+          className="mt-2 flex items-center gap-2 rounded-lg border-2 border-[#2F6B2F] px-5 py-2.5 text-sm font-semibold text-[#2F6B2F] transition hover:bg-[#C8E6C9]"
+        >
+          <FiRefreshCw />
+          Try Again
+        </Link>
+      </main>
+    );
+  }
+
+  // Build location display from raw API fields
+  const locationParts = [
+    result.city,
+    result.province,
+  ].filter(Boolean);
+
   const location =
-    result.location || result.prediction || result.city || "Unknown Location";
+    result.location ||
+    locationParts.join(", ") ||
+    result.prediction ||
+    "Unknown Location";
 
   const country = result.country || "Pakistan";
 
   const confidence = Number(
-    result.confidence ?? result.confidence_score ?? result.probability ?? 86,
+    result.confidence ?? result.confidence_score ?? result.probability ?? 0,
   );
 
-  const clues = result.clues ||
-    result.detected_clues || [
-      "Road structure",
-      "Building architecture",
-      "Urban environment",
-      "Electric poles pattern",
-    ];
+  // Build clues from raw API evidence fields
+  const apiClues = [
+    ...(result.visual_clues || []),
+    ...(result.visible_text || []),
+    ...(result.place_names || []),
+    ...(result.landmarks || []),
+  ];
+
+  const clues =
+    result.clues ||
+    (apiClues.length > 0 ? apiClues : null) ||
+    result.detected_clues ||
+    [];
 
   const safeConfidence = Math.min(Math.max(confidence, 0), 100);
+
+  const mapQuery =
+    result.latitude && result.longitude
+      ? `${result.latitude},${result.longitude}`
+      : `${location}, ${country}`;
 
   return (
     <main
@@ -525,7 +570,7 @@ export default function ImageResultPage() {
             >
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  `${location}, ${country}`,
+                  mapQuery,
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -551,6 +596,18 @@ export default function ImageResultPage() {
                 View on Map
                 <FiArrowRight />
               </a>
+
+              {result.latitude && result.longitude && (
+                <a
+                  href={`https://www.google.com/maps/dir/${result.latitude},${result.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-lg bg-[#2F6B2F] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0D3B0D] active:scale-[0.99]"
+                >
+                  Get Directions
+                  <FiArrowRight />
+                </a>
+              )}
 
               <Link
                 href="/image"

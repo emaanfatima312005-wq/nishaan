@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-<<<<<<< HEAD
-=======
 import { analyzeVoice } from "../../lib/api";
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
 import {
   FiMic,
   FiCheck,
@@ -20,8 +17,6 @@ export default function VoiceAnalyzingPage() {
   const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState(0);
-<<<<<<< HEAD
-=======
   const apiDoneRef = useRef(false);
 
   // ===============================
@@ -70,7 +65,6 @@ export default function VoiceAnalyzingPage() {
       apiDoneRef.current = true;
     }
   }, []);
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
 
   // ===============================
   // STEP REFERENCES
@@ -114,10 +108,7 @@ export default function VoiceAnalyzingPage() {
   // ===============================
 
   useEffect(() => {
-<<<<<<< HEAD
-=======
     let pollId;
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
     const interval = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev < steps.length - 1) {
@@ -126,11 +117,6 @@ export default function VoiceAnalyzingPage() {
 
         clearInterval(interval);
 
-<<<<<<< HEAD
-        setTimeout(() => {
-          router.push("/voice/output");
-        }, 1000);
-=======
         // Animation done — wait for API
         const waitAndNavigate = () => {
           if (apiDoneRef.current) {
@@ -146,20 +132,15 @@ export default function VoiceAnalyzingPage() {
         };
 
         setTimeout(waitAndNavigate, 1000);
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
 
         return prev;
       });
     }, 1400);
 
-<<<<<<< HEAD
-    return () => clearInterval(interval);
-=======
     return () => {
       clearInterval(interval);
       if (pollId) clearInterval(pollId);
     };
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
   }, [router]);
 
   // ===============================

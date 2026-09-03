@@ -29,6 +29,10 @@ export default function ImageResultPage() {
     }
   }, [router]);
 
+  /* =====================================================
+     LOADING
+  ===================================================== */
+
   if (!image || !result) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fbfcf7] px-5">
@@ -37,23 +41,44 @@ export default function ImageResultPage() {
     );
   }
 
-  // Handle API error gracefully
+  /* =====================================================
+     API ERROR
+  ===================================================== */
+
   if (result.status === "error") {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
         <p className="text-lg font-semibold text-[#0D3B0D]">
           Image analysis failed.
         </p>
+
         <p className="max-w-md text-center text-sm text-[#1A1A1A]/60">
-          {result.message || "The analysis could not be completed. Please try again."}
+          {result.message ||
+            "The analysis could not be completed. Please try again."}
         </p>
+
         <Link
           href="/image"
           onClick={() => {
             sessionStorage.removeItem("nishaanImage");
             sessionStorage.removeItem("nishaanImageResult");
           }}
-          className="mt-2 flex items-center gap-2 rounded-lg border-2 border-[#2F6B2F] px-5 py-2.5 text-sm font-semibold text-[#2F6B2F] transition hover:bg-[#C8E6C9]"
+          className="
+            mt-2
+            flex
+            items-center
+            gap-2
+            rounded-lg
+            border-2
+            border-[#2F6B2F]
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+            text-[#2F6B2F]
+            transition
+            hover:bg-[#C8E6C9]
+          "
         >
           <FiRefreshCw />
           Try Again
@@ -62,11 +87,11 @@ export default function ImageResultPage() {
     );
   }
 
-  // Build location display from raw API fields
-  const locationParts = [
-    result.city,
-    result.province,
-  ].filter(Boolean);
+  /* =====================================================
+     LOCATION
+  ===================================================== */
+
+  const locationParts = [result.city, result.province].filter(Boolean);
 
   const location =
     result.location ||
@@ -76,30 +101,62 @@ export default function ImageResultPage() {
 
   const country = result.country || "Pakistan";
 
+  /* =====================================================
+     CONFIDENCE
+  ===================================================== */
+
   const confidence = Number(
     result.confidence ?? result.confidence_score ?? result.probability ?? 0,
   );
 
-  // Build clues from raw API evidence fields
+  const safeConfidence = Math.min(Math.max(confidence, 0), 100);
+
+  /* =====================================================
+     CLUES
+  ===================================================== */
+
   const apiClues = [
-    ...(result.visual_clues || []),
-    ...(result.visible_text || []),
-    ...(result.place_names || []),
-    ...(result.landmarks || []),
+    ...(Array.isArray(result.visual_clues) ? result.visual_clues : []),
+
+    ...(Array.isArray(result.visible_text) ? result.visible_text : []),
+
+    ...(Array.isArray(result.place_names) ? result.place_names : []),
+
+    ...(Array.isArray(result.landmarks) ? result.landmarks : []),
   ];
 
   const clues =
-    result.clues ||
-    (apiClues.length > 0 ? apiClues : null) ||
-    result.detected_clues ||
-    [];
+    Array.isArray(result.clues) && result.clues.length > 0
+      ? result.clues
+      : apiClues.length > 0
+        ? apiClues
+        : Array.isArray(result.detected_clues)
+          ? result.detected_clues
+          : [];
 
-  const safeConfidence = Math.min(Math.max(confidence, 0), 100);
+  /* =====================================================
+     MAP
+  ===================================================== */
 
-  const mapQuery =
-    result.latitude && result.longitude
-      ? `${result.latitude},${result.longitude}`
-      : `${location}, ${country}`;
+  const hasCoordinates =
+    result.latitude !== undefined &&
+    result.latitude !== null &&
+    result.longitude !== undefined &&
+    result.longitude !== null;
+
+  const mapQuery = hasCoordinates
+    ? `${result.latitude},${result.longitude}`
+    : `${location}, ${country}`;
+
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    mapQuery,
+  )}`;
+
+  const directionsUrl = hasCoordinates
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+        `${result.latitude},${result.longitude}`,
+      )}`
+    : null;
 
   return (
     <main
@@ -114,6 +171,7 @@ export default function ImageResultPage() {
       {/* =====================================================
           BACKGROUND VIDEO
       ===================================================== */}
+
       <div
         className="
           pointer-events-none
@@ -158,7 +216,7 @@ export default function ImageResultPage() {
           "
         />
 
-        {/* Gradient for readability */}
+        {/* Readability gradient */}
         <div
           className="
             absolute
@@ -174,6 +232,7 @@ export default function ImageResultPage() {
       {/* =====================================================
           DECORATIVE MINAR
       ===================================================== */}
+
       <img
         src="/images/minar.png"
         alt=""
@@ -197,6 +256,7 @@ export default function ImageResultPage() {
       {/* =====================================================
           DECORATIVE MAP
       ===================================================== */}
+
       <img
         src="/images/map.png"
         alt=""
@@ -218,6 +278,7 @@ export default function ImageResultPage() {
       {/* =====================================================
           PROGRESS
       ===================================================== */}
+
       <div
         className="
           relative
@@ -248,6 +309,7 @@ export default function ImageResultPage() {
       {/* =====================================================
           MAIN CONTENT
       ===================================================== */}
+
       <section
         className="
           relative
@@ -263,6 +325,8 @@ export default function ImageResultPage() {
           lg:py-14
         "
       >
+        {/* Heading */}
+
         <h1
           className="
             mb-7
@@ -278,6 +342,10 @@ export default function ImageResultPage() {
           Image Analysis Result
         </h1>
 
+        {/* =================================================
+            GRID
+        ================================================= */}
+
         <div
           className="
             grid
@@ -290,6 +358,7 @@ export default function ImageResultPage() {
           {/* =================================================
               IMAGE CARD
           ================================================= */}
+
           <div
             className="
               overflow-hidden
@@ -332,6 +401,7 @@ export default function ImageResultPage() {
           {/* =================================================
               RESULT CARD
           ================================================= */}
+
           <div
             className="
               flex
@@ -347,7 +417,10 @@ export default function ImageResultPage() {
               lg:p-8
             "
           >
-            {/* Location */}
+            {/* =================================================
+                LOCATION
+            ================================================= */}
+
             <div
               className="
                 flex
@@ -420,6 +493,7 @@ export default function ImageResultPage() {
             {/* =================================================
                 CONFIDENCE
             ================================================= */}
+
             <div
               className="
                 mt-7
@@ -473,6 +547,7 @@ export default function ImageResultPage() {
                     rounded-full
                     bg-[#5FAF5F]
                     transition-all
+                    duration-700
                   "
                   style={{
                     width: `${safeConfidence}%`,
@@ -494,6 +569,7 @@ export default function ImageResultPage() {
             {/* =================================================
                 CLUES
             ================================================= */}
+
             <div
               className="
                 mt-7
@@ -513,11 +589,11 @@ export default function ImageResultPage() {
                 Detected Clues
               </h3>
 
-              <div className="mt-4 space-y-3">
-                {Array.isArray(clues) &&
-                  clues.map((clue, index) => (
+              {clues.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {clues.map((clue, index) => (
                     <div
-                      key={`${clue}-${index}`}
+                      key={`${String(clue)}-${index}`}
                       className="
                         flex
                         items-start
@@ -548,15 +624,31 @@ export default function ImageResultPage() {
                         />
                       </span>
 
-                      <span>{clue}</span>
+                      <span>
+                        {typeof clue === "object"
+                          ? JSON.stringify(clue)
+                          : String(clue)}
+                      </span>
                     </div>
                   ))}
-              </div>
+                </div>
+              ) : (
+                <p
+                  className="
+                    mt-4
+                    text-sm
+                    text-[#1A1A1A]/60
+                  "
+                >
+                  No specific visual clues were detected.
+                </p>
+              )}
             </div>
 
             {/* =================================================
                 BUTTONS
             ================================================= */}
+
             <div
               className="
                 mt-8
@@ -568,10 +660,10 @@ export default function ImageResultPage() {
                 lg:pt-8
               "
             >
+              {/* View Map */}
+
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  mapQuery,
-                )}`}
+                href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="
@@ -597,17 +689,38 @@ export default function ImageResultPage() {
                 <FiArrowRight />
               </a>
 
-              {result.latitude && result.longitude && (
+              {/* Directions */}
+
+              {directionsUrl && (
                 <a
-                  href={`https://www.google.com/maps/dir/${result.latitude},${result.longitude}`}
+                  href={directionsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-lg bg-[#2F6B2F] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0D3B0D] active:scale-[0.99]"
+                  className="
+                    flex
+                    min-h-[46px]
+                    flex-1
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-lg
+                    bg-[#2F6B2F]
+                    px-4
+                    py-3
+                    text-sm
+                    font-semibold
+                    text-white
+                    transition
+                    hover:bg-[#0D3B0D]
+                    active:scale-[0.99]
+                  "
                 >
                   Get Directions
                   <FiArrowRight />
                 </a>
               )}
+
+              {/* New Search */}
 
               <Link
                 href="/image"
@@ -651,7 +764,7 @@ export default function ImageResultPage() {
    STEP
 ========================================================= */
 
-function Step({ number, label, active, complete }) {
+function Step({ number, label, active = false, complete = false }) {
   return (
     <div
       className="

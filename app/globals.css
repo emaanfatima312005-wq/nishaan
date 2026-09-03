@@ -24,6 +24,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 /* ========================================================= */
 /* NISHAAN HERO MAP ANIMATIONS */
 /* ========================================================= */
@@ -460,6 +461,7 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
 /* ========================================= */
 /* NISHAAN MAP ANIMATIONS */
 /* ========================================= */
@@ -502,19 +504,6 @@ body {
 /* NETWORK NODES */
 /* ========================================= */
 
-@keyframes nodePulse {
-  0%,
-  100% {
-    transform: scale(0.7);
-    opacity: 0.45;
-  }
-
-  50% {
-    transform: scale(1.5);
-    opacity: 1;
-  }
-}
-
 .animate-nodePulse {
   animation: nodePulse 2.5s ease-in-out infinite;
 }
@@ -546,20 +535,10 @@ body {
 .animate-scanLine {
   animation: scanLine 2.2s ease-in-out forwards;
 }
+
 /* ========================================================= */
 /* NISHAAN HERO ANIMATIONS */
 /* ========================================================= */
-
-@keyframes mapFloat {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-8px);
-  }
-}
 
 .animate-map-float {
   animation: mapFloat 6s ease-in-out infinite;
@@ -672,17 +651,6 @@ body {
 
 /* ================= PIN ================= */
 
-@keyframes pinFloat {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-9px);
-  }
-}
-
 .animate-pin-float {
   animation: pinFloat 3s ease-in-out infinite;
 }
@@ -740,28 +708,12 @@ body {
 .animate-data-float-reverse {
   animation: dataFloatReverse 6s ease-in-out infinite;
 }
+
 /* ========================================================= */
 /* NISHAAN GEOSPATIAL NETWORK */
 /* ========================================================= */
 
 /* ================= NODE PULSE ================= */
-
-@keyframes nodePulse {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-
-  35% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-}
 
 .animate-node-pulse {
   animation: nodePulse 2.8s ease-out infinite;
@@ -800,22 +752,6 @@ body {
   filter: drop-shadow(0 0 2px #5faf5f);
 
   animation: networkFlow 3s linear infinite;
-}
-
-@keyframes networkFlow {
-  from {
-    stroke-dashoffset: 10;
-    stroke-opacity: 0.2;
-  }
-
-  50% {
-    stroke-opacity: 0.8;
-  }
-
-  to {
-    stroke-dashoffset: 0;
-    stroke-opacity: 0.2;
-  }
 }
 
 /* ================= TRAVELING PARTICLES ================= */
@@ -1005,22 +941,13 @@ body {
     opacity: 0;
   }
 }
+
 /* ================= VOICE FREQUENCY ================= */
 
-<<<<<<< HEAD
 @keyframes voiceWave {
   0%,
   100% {
     transform: scaleY(0.9);
-=======
-}
-/* ================= VOICE FREQUENCY ================= */
-
-@keyframes voiceWave {
-  0%,
-  100% {
-    transform: scaleY(0.90);
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
     opacity: 0.45;
   }
 
@@ -1039,24 +966,6 @@ body {
 /* ANALYZING PAGE ANIMATIONS */
 /* ========================================= */
 
-@keyframes orbit {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-.animate-orbit {
-  animation: orbit 18s linear infinite;
-}
-
-<<<<<<< HEAD
-=======
-
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
 @keyframes scan-beam {
   0% {
     transform: translate(-50%, -100%) rotate(-90deg);
@@ -1084,8 +993,4 @@ body {
 
 .animate-scan-beam {
   animation: scan-beam 4s linear infinite;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889

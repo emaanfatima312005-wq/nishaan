@@ -9,7 +9,6 @@ import {
 
 export default function termsAndConditions() {
   return (
-<<<<<<< HEAD
     <main className="relative min-h-screen text-[#1A1A1A] overflow-hidden">
       {/* ================================================= */}
       {/* FULL PAGE BACKGROUND IMAGE */}
@@ -23,9 +22,6 @@ export default function termsAndConditions() {
         />
       </div>
 
-=======
-    <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
       {/* ================================================= */}
       {/* HEADER */}
       {/* ================================================= */}
@@ -135,10 +131,6 @@ export default function termsAndConditions() {
               <li className="flex gap-3">
                 <span className="text-[#5FAF5F]">•</span>
                 Do not intentionally provide harmful or misleading content.
-              </li>
-
-              <li className="flex gap-3">
-                <span className="text-[#5FAF5F]">•</span>
               </li>
             </ul>
           </div>

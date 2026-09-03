@@ -291,7 +291,7 @@ export default function Navbar() {
               group
             "
           >
-            <span>Explore Map</span>
+            <span>Explore Nishaan</span>
 
             <span
               className="

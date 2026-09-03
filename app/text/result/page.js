@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+
 import {
   FiArrowLeft,
   FiArrowRight,
@@ -28,7 +29,8 @@ const MapView = dynamic(() => import("./MapView"), {
   ),
 });
 
-// No hardcoded location data — real API results only.
+// No hardcoded location data.
+// Real API results only.
 
 const aiSteps = [
   {
@@ -65,11 +67,18 @@ export default function ResultPage() {
   const [locationData, setLocationData] = useState(null);
   const [apiError, setApiError] = useState(null);
 
-  // Read real API result from sessionStorage
+  // =========================================================
+  // READ REAL API RESULT FROM SESSION STORAGE
+  // =========================================================
+
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem("nishaan_text_result");
-      if (!stored) return;
+
+      if (!stored) {
+        setApiError("No text analysis result was found.");
+        return;
+      }
 
       const result = JSON.parse(stored);
 
@@ -84,17 +93,21 @@ export default function ResultPage() {
         town: result.town || "",
         area: result.area || "",
         street: result.street || "",
-        latitude: result.latitude,
-        longitude: result.longitude,
-        confidence: result.confidence ?? 0,
+        latitude: Number(result.latitude),
+        longitude: Number(result.longitude),
+        confidence: Math.max(0, Math.min(100, Number(result.confidence ?? 0))),
         landmarks: result.landmarks || [],
         place_names: result.place_names || [],
       });
-    } catch (e) {
-      console.error("Could not read text result:", e);
+    } catch (error) {
+      console.error("Could not read text result:", error);
       setApiError("Could not read analysis result.");
     }
   }, []);
+
+  // =========================================================
+  // GET USER'S CURRENT LOCATION
+  // =========================================================
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -108,94 +121,154 @@ export default function ResultPage() {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         });
+
+        setLocationError("");
       },
       () => {
-        setLocationError("Your current location could not be accessed.");
+        setLocationError(
+          "Your current location could not be accessed. You can still open the destination in Google Maps.",
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
       },
     );
   }, []);
 
+  // =========================================================
+  // SEARCH AGAIN
+  // =========================================================
+
   const handleSearchAgain = () => {
+    sessionStorage.removeItem("nishaan_text_result");
     router.push("/text");
   };
 
-  const handleDirections = () => {
-    if (!locationData?.latitude || !locationData?.longitude) return;
+  // =========================================================
+  // GET DIRECTIONS
+  // =========================================================
 
-    if (!userLocation) {
-<<<<<<< HEAD
-      alert(
-        "Please allow location access so Nishaan can calculate directions from your current location.",
-      );
-=======
-      // Open Google Maps with just the destination
-      const url = `https://www.google.com/maps/search/?api=1&query=${locationData.latitude},${locationData.longitude}`;
-      window.open(url, "_blank");
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
+  const handleDirections = () => {
+    if (
+      !locationData ||
+      !Number.isFinite(locationData.latitude) ||
+      !Number.isFinite(locationData.longitude)
+    ) {
       return;
     }
 
-    // Open Google Maps with directions from user location
-    const url = `https://www.google.com/maps/dir/${userLocation.latitude},${userLocation.longitude}/${locationData.latitude},${locationData.longitude}`;
-    window.open(url, "_blank");
+    // If user's location is available,
+    // open directions from current location to destination.
+    if (userLocation) {
+      const url =
+        `https://www.google.com/maps/dir/` +
+        `${userLocation.latitude},${userLocation.longitude}/` +
+        `${locationData.latitude},${locationData.longitude}`;
+
+      window.open(url, "_blank", "noopener,noreferrer");
+
+      return;
+    }
+
+    // If user's location is unavailable,
+    // open the destination directly in Google Maps.
+    const destinationUrl =
+      `https://www.google.com/maps/search/?api=1&query=` +
+      `${locationData.latitude},${locationData.longitude}`;
+
+    window.open(destinationUrl, "_blank", "noopener,noreferrer");
   };
 
-  // Show loading state
+  // =========================================================
+  // LOADING STATE
+  // =========================================================
+
   if (locationData === null && apiError === null) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fbfcf7] px-5">
-        <p className="text-sm text-[#1A1A1A]/60">Loading result...</p>
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#C8E6C9] border-t-[#0D3B0D]" />
+
+          <p className="mt-4 text-sm text-[#1A1A1A]/60">Loading result...</p>
+        </div>
       </main>
     );
   }
 
-  // Show API error
+  // =========================================================
+  // API ERROR
+  // =========================================================
+
   if (apiError) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
-        <p className="text-lg font-semibold text-[#0D3B0D]">
-          Text analysis failed.
-        </p>
-        <p className="max-w-md text-center text-sm text-[#1A1A1A]/60">
-          {apiError}
-        </p>
-        <button
-          onClick={() => {
-            sessionStorage.removeItem("nishaan_text_result");
-            router.push("/text");
-          }}
-          className="mt-2 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
-        >
-          <FiRefreshCw size={17} />
-          Search Again
-        </button>
+      <main className="relative flex min-h-screen flex-col items-center justify-center gap-4 overflow-hidden bg-[#fbfcf7] px-5">
+        <div className="pointer-events-none absolute left-[-150px] top-[15%] h-[500px] w-[500px] rounded-full bg-[#5FAF5F]/10 blur-[120px]" />
+
+        <div className="pointer-events-none absolute bottom-[10%] right-[-150px] h-[500px] w-[500px] rounded-full bg-[#2F6B2F]/10 blur-[120px]" />
+
+        <div className="relative z-10 max-w-md text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0D3B0D]">
+            <FiMapPin size={25} className="text-[#5FAF5F]" />
+          </div>
+
+          <p className="mt-6 text-lg font-semibold text-[#0D3B0D]">
+            Text analysis failed.
+          </p>
+
+          <p className="mt-3 text-sm leading-6 text-[#1A1A1A]/60">{apiError}</p>
+
+          <button
+            onClick={handleSearchAgain}
+            className="mt-6 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
+          >
+            <FiRefreshCw size={17} />
+            Search Again
+          </button>
+        </div>
       </main>
     );
   }
 
-  // Show error if no coordinates from API
-  if (!locationData.latitude || !locationData.longitude) {
+  // =========================================================
+  // INVALID COORDINATES
+  // =========================================================
+
+  if (
+    !Number.isFinite(locationData.latitude) ||
+    !Number.isFinite(locationData.longitude)
+  ) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#fbfcf7] px-5">
-        <p className="text-lg font-semibold text-[#0D3B0D]">
-          Location could not be verified.
-        </p>
-        <p className="text-sm text-[#1A1A1A]/60">
-          Nishaan could not find geographic coordinates for this description.
-        </p>
-        <button
-          onClick={() => {
-            sessionStorage.removeItem("nishaan_text_result");
-            router.push("/text");
-          }}
-          className="mt-2 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
-        >
-          <FiRefreshCw size={17} />
-          Search Again
-        </button>
+      <main className="relative flex min-h-screen flex-col items-center justify-center gap-4 overflow-hidden bg-[#fbfcf7] px-5">
+        <div className="relative z-10 max-w-md text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0D3B0D]">
+            <FiMapPin size={25} className="text-[#5FAF5F]" />
+          </div>
+
+          <p className="mt-6 text-lg font-semibold text-[#0D3B0D]">
+            Location could not be verified.
+          </p>
+
+          <p className="mt-3 text-sm text-[#1A1A1A]/60">
+            Nishaan could not find geographic coordinates for this description.
+          </p>
+
+          <button
+            onClick={handleSearchAgain}
+            className="mt-6 flex items-center gap-2 rounded-xl border border-[#2F6B2F] bg-[#fbfcf7] px-5 py-3 text-sm font-bold text-[#0D3B0D] transition hover:bg-[#C8E6C9]/40"
+          >
+            <FiRefreshCw size={17} />
+            Search Again
+          </button>
+        </div>
       </main>
     );
   }
+
+  // =========================================================
+  // MAIN RESULT PAGE
+  // =========================================================
 
   return (
     <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">
@@ -205,6 +278,8 @@ export default function ResultPage() {
 
       <header className="border-b border-[#C8E6C9] bg-[#fbfcf7]">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          {/* Back */}
+
           <button
             onClick={() => router.push("/text")}
             className="flex items-center gap-2 text-sm font-semibold text-[#2F6B2F] transition hover:text-[#0D3B0D]"
@@ -212,6 +287,8 @@ export default function ResultPage() {
             <FiArrowLeft size={17} />
             Back
           </button>
+
+          {/* Logo */}
 
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0D3B0D] text-[#fbfcf7]">
@@ -224,6 +301,8 @@ export default function ResultPage() {
               <p className="text-[10px] text-[#2F6B2F]">AI Location Finder</p>
             </div>
           </div>
+
+          {/* Status */}
 
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#5FAF5F]" />
@@ -240,7 +319,7 @@ export default function ResultPage() {
       ===================================================== */}
 
       <section className="mx-auto max-w-7xl px-5 py-7 md:px-6">
-        {/* Success heading */}
+        {/* SUCCESS HEADING */}
 
         <div className="mb-7">
           <div className="mb-3 flex items-center gap-2">
@@ -286,7 +365,7 @@ export default function ResultPage() {
               }}
             />
 
-            {/* Map badge */}
+            {/* MAP BADGE */}
 
             <div className="absolute left-5 top-5 z-[500] flex items-center gap-2 rounded-full border border-[#C8E6C9] bg-[#fbfcf7]/95 px-4 py-2 shadow-lg backdrop-blur">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#5FAF5F]" />
@@ -302,7 +381,7 @@ export default function ResultPage() {
           ================================================= */}
 
           <div className="flex flex-col p-6 md:p-8">
-            {/* Location found */}
+            {/* LOCATION FOUND */}
 
             <div className="rounded-2xl bg-[#0D3B0D] p-5 text-[#fbfcf7]">
               <div className="flex items-start justify-between">
@@ -312,23 +391,27 @@ export default function ResultPage() {
                   </p>
 
                   <h3 className="mt-2 text-xl font-bold">
-                    {locationData.street}
+                    {locationData.street || "Location identified"}
                   </h3>
 
                   <p className="mt-1 text-sm text-[#C8E6C9]">
-                    {locationData.area}, {locationData.city}
+                    {[locationData.area, locationData.city]
+                      .filter(Boolean)
+                      .join(", ")}
                   </p>
                 </div>
 
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2F6B2F]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2F6B2F]">
                   <FiMapPin size={19} />
                 </div>
               </div>
 
+              {/* CONFIDENCE */}
+
               <div className="mt-5 flex items-center gap-2">
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#2F6B2F]">
                   <div
-                    className="h-full rounded-full bg-[#5FAF5F]"
+                    className="h-full rounded-full bg-[#5FAF5F] transition-all duration-1000"
                     style={{
                       width: `${locationData.confidence}%`,
                     }}
@@ -436,10 +519,14 @@ export default function ResultPage() {
 
             <div className="mt-auto pt-7">
               {locationError && (
-                <p className="mb-3 text-xs text-red-600">{locationError}</p>
+                <p className="mb-3 text-xs leading-5 text-amber-700">
+                  {locationError}
+                </p>
               )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* SEARCH AGAIN */}
+
                 <button
                   onClick={handleSearchAgain}
                   className="
@@ -464,6 +551,8 @@ export default function ResultPage() {
                   Search Again
                 </button>
 
+                {/* DIRECTIONS */}
+
                 <button
                   onClick={handleDirections}
                   className="
@@ -484,7 +573,9 @@ export default function ResultPage() {
                   "
                 >
                   <FiNavigation size={17} />
-                  Get Directions
+
+                  {userLocation ? "Get Directions" : "Open in Maps"}
+
                   <FiArrowRight size={16} />
                 </button>
               </div>
@@ -507,7 +598,9 @@ function LocationDetail({ label, value }) {
         {label}
       </p>
 
-      <p className="mt-1 text-xs font-bold text-[#0D3B0D]">{value}</p>
+      <p className="mt-1 text-xs font-bold text-[#0D3B0D]">
+        {value || "Not available"}
+      </p>
     </div>
   );
 }

@@ -117,16 +117,7 @@ export default function ImageInputPage() {
   };
 
   return (
-<<<<<<< HEAD
-    <main
-      className="
-        relative
-        min-h-[calc(100vh-96px)]
-        overflow-hidden
-        bg-[#fbfcf7]
-        text-[#1A1A1A]
-      "
-    >
+    <main className="relative min-h-[calc(100vh-96px)] overflow-hidden bg-[#fbfcf7] text-[#1A1A1A]">
       {/* ================================================= */}
       {/* FULL SCREEN 3D MOSQUE VIDEO BACKGROUND */}
       {/* ================================================= */}
@@ -188,24 +179,17 @@ export default function ImageInputPage() {
         />
       </div>
 
-=======
-    <main className="relative min-h-[calc(100vh-96px)] overflow-hidden bg-[#fbfcf7] text-[#1A1A1A]">
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
       {/* ================================================= */}
       {/* BACKGROUND VISUALS */}
       {/* ================================================= */}
 
       {/* LEFT — MINAR */}
-<<<<<<< HEAD
 
-=======
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
       <img
         src="/images/minar.png"
         alt=""
         aria-hidden="true"
         className="
-<<<<<<< HEAD
           pointer-events-none
           absolute
           left-[-100px]
@@ -223,24 +207,6 @@ export default function ImageInputPage() {
 
       {/* RIGHT — PAKISTAN MAP */}
 
-=======
-    pointer-events-none
-    absolute
-    left-[-100px]
-    top-[100px]
-    z-0
-    h-[calc(100vh-100px)]
-    w-auto
-    max-w-none
-    opacity-[0.10]
-    select-none
-    lg:block
-    hidden
-  "
-      />
-
-      {/* RIGHT — PAKISTAN MAP */}
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
       <img
         src="/images/map.png"
         alt=""
@@ -250,21 +216,12 @@ export default function ImageInputPage() {
           absolute
           right-[-80px]
           top-[200px]
-<<<<<<< HEAD
           z-[2]
           hidden
           w-[500px]
           select-none
           opacity-[0.07]
           lg:block
-=======
-          z-0
-          w-[500px]
-          opacity-[0.07]
-          select-none
-          lg:block
-          hidden
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
         "
       />
 
@@ -272,7 +229,6 @@ export default function ImageInputPage() {
       {/* PROGRESS */}
       {/* ================================================= */}
 
-<<<<<<< HEAD
       <div
         className="
           relative
@@ -285,9 +241,6 @@ export default function ImageInputPage() {
           lg:px-10
         "
       >
-=======
-      <div className="relative z-10 mx-auto max-w-5xl px-5 pt-8 sm:px-8 lg:px-10">
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
         <div className="flex items-center">
           <Step number="1" label="Input" active />
 
@@ -305,7 +258,6 @@ export default function ImageInputPage() {
       {/* MAIN CONTENT */}
       {/* ================================================= */}
 
-<<<<<<< HEAD
       <section
         className="
           relative
@@ -363,23 +315,6 @@ export default function ImageInputPage() {
               sm:text-base
             "
           >
-=======
-      <section className="relative z-10 mx-auto flex min-h-[620px] max-w-4xl flex-col items-center px-5 py-12 sm:px-8 lg:py-16">
-        {/* Heading */}
-
-        <div className="mb-8 text-center">
-          {/* Small Label */}
-
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#5FAF5F]">
-            Location Discovery
-          </p>
-
-          <h1 className="text-3xl font-semibold tracking-tight text-[#0D3B0D] sm:text-4xl">
-            Image Input
-          </h1>
-
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#1A1A1A]/70 sm:text-base">
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
             Upload an image and let Nishaan analyze the visual clues to discover
             where the place might be.
           </p>
@@ -411,19 +346,13 @@ export default function ImageInputPage() {
               transition-all
               ${
                 dragging
-<<<<<<< HEAD
                   ? "border-[#5FAF5F] bg-[#C8E6C9]/90"
                   : "border-[#5FAF5F] bg-white/90 backdrop-blur-sm"
-=======
-                  ? "border-[#5FAF5F] bg-[#C8E6C9]"
-                  : "border-[#5FAF5F] bg-white"
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
               }
             `}
           >
             {/* Upload Icon */}
 
-<<<<<<< HEAD
             <div
               className="
                 mb-5
@@ -442,10 +371,6 @@ export default function ImageInputPage() {
                   text-[#2F6B2F]
                 "
               />
-=======
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#C8E6C9]">
-              <FiUploadCloud className="text-4xl text-[#2F6B2F]" />
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
             </div>
 
             {/* Heading */}
@@ -521,7 +446,6 @@ export default function ImageInputPage() {
           /* SELECTED IMAGE */
           /* ================================================= */
 
-<<<<<<< HEAD
           <div
             className="
               w-full
@@ -546,10 +470,6 @@ export default function ImageInputPage() {
                 bg-[#C8E6C9]
               "
             >
-=======
-          <div className="w-full max-w-2xl rounded-2xl border border-[#C8E6C9] bg-white p-4 shadow-sm sm:p-6">
-            <div className="relative overflow-hidden rounded-xl bg-[#C8E6C9]">
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
               <img
                 src={preview}
                 alt="Selected image"
@@ -589,7 +509,6 @@ export default function ImageInputPage() {
 
             {/* File Information */}
 
-<<<<<<< HEAD
             <div
               className="
                 mt-4
@@ -609,10 +528,6 @@ export default function ImageInputPage() {
                   bg-[#C8E6C9]
                 "
               >
-=======
-            <div className="mt-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C8E6C9]">
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
                 <FiImage className="text-[#2F6B2F]" />
               </div>
 

@@ -230,7 +230,6 @@ export default function FAQs() {
   };
 
   return (
-<<<<<<< HEAD
     <main className="relative min-h-screen text-[#1A1A1A] overflow-hidden">
       {/* ================================================= */}
       {/* FULL PAGE BACKGROUND IMAGE */}
@@ -244,9 +243,6 @@ export default function FAQs() {
         />
       </div>
 
-=======
-    <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
       {/* ================================================= */}
       {/* HERO */}
       {/* ================================================= */}
@@ -398,14 +394,7 @@ export default function FAQs() {
 
             <Link
               href="/explore"
-<<<<<<< HEAD
-              className="inline-block mt-7 px-7 py-3 rounded-xl bg-[#5FAF5F] text-white font-semibold 
-              hover:bg-[#2F6B2F] hover:-translate-y-1 
-=======
-              className="inline-block mt-7 px-7 py-3 rounded-xl bg-[#5FAF5F] text-white font-semibold
-              hover:bg-[#2F6B2F] hover:-translate-y-1
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
-              transition-all duration-300"
+              className="inline-block mt-7 px-7 py-3 rounded-xl bg-[#5FAF5F] text-white font-semibold hover:bg-[#2F6B2F] hover:-translate-y-1 transition-all duration-300"
             >
               Explore
             </Link>

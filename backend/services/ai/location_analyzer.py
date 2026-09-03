@@ -254,6 +254,102 @@ USER CLUE:
     # IMAGE ANALYSIS
     # ========================================================
 
+    @staticmethod
+    def _combine_ocr(result: dict):
+        """
+        Combine adjacent short OCR text fragments into
+        likely business or place names and add them to
+        searchable_clues and business_names.
+
+        E.g. visible_text = ["SHAHEEN",
+                             "CHEMIST & GROCERS"]
+        -> searchable_clues += ["Shaheen Chemist &
+                                 Grocers"]
+        """
+        vt = result.get("visible_text") or []
+        sc = list(
+            result.get("searchable_clues") or []
+        )
+        bn = list(
+            result.get("business_names") or []
+        )
+
+        i = 0
+        while i < len(vt):
+            item = (vt[i] or "").strip()
+
+            if not item:
+                i += 1
+                continue
+
+            # Try combining with the next fragment
+            # when the current one is short (likely
+            # part of a multi-line business sign).
+            if (
+                i + 1 < len(vt)
+                and len(item) <= 15
+                and not item[0].isdigit()
+            ):
+                next_item = (
+                    vt[i + 1] or ""
+                ).strip()
+
+                if (
+                    next_item
+                    and len(next_item) >= 3
+                ):
+                    combined = (
+                        f"{item} {next_item}"
+                    ).title()
+
+                    if (
+                        combined not in sc
+                        and len(combined) <= 60
+                    ):
+                        sc.append(combined)
+
+                        # If it looks like a business
+                        # name, also add to
+                        # business_names.
+                        lower = combined.lower()
+                        biz_words = [
+                            "store", "shop",
+                            "chemist", "medical",
+                            "electronics", "plaza",
+                            "centre", "center",
+                            "hotel", "restaurant",
+                            "pharmacy", "clinic",
+                            "school", "college",
+                            "academy", "mosque",
+                            "masjid", "market",
+                            "traders", "general",
+                            "&", "and",
+                        ]
+                        if any(
+                            w in lower
+                            for w in biz_words
+                        ):
+                            if combined not in bn:
+                                bn.append(combined)
+
+                    i += 2
+                    continue
+
+            # Single item: add to searchable_clues
+            # if it looks like a proper name (not
+            # just a number or generic word).
+            if (
+                len(item) >= 3
+                and not item.isdigit()
+                and item not in sc
+            ):
+                sc.append(item)
+
+            i += 1
+
+        result["searchable_clues"] = sc[:10]
+        result["business_names"] = bn[:10]
+
     async def analyze_image(
         self,
         image_bytes: bytes,
@@ -306,6 +402,7 @@ STEP 1: First, scan the entire image for ALL visible text:
 - English text on signs, shop fronts
 - phone numbers, addresses on signboards
 - any other readable text
+- House number
 
 OCR is extremely important. Read every visible text item
 exactly as it appears, preserving Urdu and English.
@@ -437,6 +534,10 @@ Return ONLY valid JSON:
   "area": null,
   "street": null,
   "house_number": null,
+  "business_names": [],
+  "searchable_clues": [],
+  "street_names": [],
+  "landmark_names": [],
   "place_names": [],
   "landmarks": [],
   "visible_text": [],
@@ -451,9 +552,18 @@ Rules:
   each geographic field you filled. If a field is null,
   explain why you could not determine it.
 - Exact visible names go into visible_text.
+- Complete business or shop names (e.g. "Shaheen
+  Chemist & Grocers", "Karim Electronics", "Al-Madina
+  Store") go into business_names.
+- Any text that can be searched on a map (business
+  name, building name, mosque name, school name,
+  road name) goes into searchable_clues.
+- Named roads, streets, or boulevards visible on
+  signs go into street_names.
+- Named buildings, monuments, mosques, schools,
+  hospitals, or markets go into landmark_names.
 - Named localities whose administrative level is unclear
   go into place_names.
-- Useful geographic landmarks go into landmarks.
 - Generic visual observations go into visual_clues.
 - Include regional indicators in visual_clues
   (e.g. "Mughal-era architecture", "Punjabi-style truck
@@ -461,6 +571,10 @@ Rules:
   terrain").
 - Do not guess missing geographic fields without
   visible evidence.
+- Maximum 10 business_names.
+- Maximum 10 searchable_clues.
+- Maximum 5 street_names.
+- Maximum 8 landmark_names.
 - Maximum 8 place_names.
 - Maximum 8 landmarks.
 - Maximum 15 visible_text items.
@@ -536,6 +650,10 @@ Rules:
             "landmarks",
             "visible_text",
             "visual_clues",
+            "business_names",
+            "searchable_clues",
+            "street_names",
+            "landmark_names",
         ]:
             if not isinstance(
                 result.get(field),
@@ -558,6 +676,17 @@ Rules:
         )
 
         # ------------------------------------------
+        # COMBINE OCR FRAGMENTS
+        # ------------------------------------------
+        # Adjacent short text fragments that likely
+        # form a single business or place name are
+        # combined into searchable_clues.
+        # E.g. "SHAHEEN" + "CHEMIST & GROCERS"
+        #   -> "Shaheen Chemist & Grocers"
+
+        self._combine_ocr(result)
+
+        # ------------------------------------------
         # ANTI-HALLUCINATION: confidence gating
         # ------------------------------------------
         # The vision model sometimes hallucinates specific
@@ -570,6 +699,9 @@ Rules:
 
         _has_text_evidence = bool(
             result.get("visible_text")
+            or result.get("business_names")
+            or result.get("searchable_clues")
+            or result.get("landmark_names")
         )
 
         _vision_conf = result.get("confidence", 0) or 0

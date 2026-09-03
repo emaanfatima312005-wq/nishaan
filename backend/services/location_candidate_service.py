@@ -202,24 +202,120 @@ class LocationCandidateService:
         place_names: list[str] | None = None,
         house_number: str | None = None,
         visible_text: list[str] | None = None,
+        business_names: list[str] | None = None,
+        searchable_clues: list[str] | None = None,
     ):
 
         landmarks = landmarks or []
         place_names = place_names or []
         visible_text = visible_text or []
+        business_names = business_names or []
+        searchable_clues = searchable_clues or []
 
         candidates = []
 
         # ----------------------------------------------------
-        # 1. OCR TEXT — FREE-FORM NOMINATIM SEARCH
+        # 1. BUSINESS NAMES + SEARCHABLE CLUES
+        #    (highest priority — pre-combined OCR)
         # ----------------------------------------------------
-        # Each visible text item is searched as an
-        # exact_query against Nominatim.  This is a
-        # free-form search across all of Pakistan,
-        # not constrained by city or street context.
-        # This is the PRIMARY search strategy because
-        # real text read from the image is the most
-        # reliable evidence.
+        # Business names (e.g. "Shaheen Chemist &
+        # Grocers") and searchable clues are the
+        # strongest OCR evidence.  Each is searched
+        # as an exact_query against Nominatim across
+        # all of Pakistan.
+
+        priority_queries = []
+
+        for name in business_names[:5]:
+            cleaned = (name or "").strip()
+            if cleaned and len(cleaned) >= 3:
+                priority_queries.append(cleaned)
+
+        for clue in searchable_clues[:5]:
+            cleaned = (clue or "").strip()
+            if (
+                cleaned
+                and len(cleaned) >= 3
+                and cleaned not in priority_queries
+            ):
+                priority_queries.append(cleaned)
+
+        for query in priority_queries:
+
+            try:
+
+                results = await (
+                    GeocodingService.search(
+                        exact_query=query,
+                    )
+                )
+
+                for result in results:
+
+                    latitude = result.get("lat")
+                    longitude = result.get("lon")
+
+                    if (
+                        latitude is None
+                        or longitude is None
+                    ):
+                        continue
+
+                    candidates.append(
+                        {
+                            "latitude": float(
+                                latitude
+                            ),
+                            "longitude": float(
+                                longitude
+                            ),
+                            "display_name": result.get(
+                                "display_name"
+                            ),
+                            "province": (
+                                result.get(
+                                    "address", {},
+                                ).get("state")
+                            ),
+                            "city": (
+                                result.get(
+                                    "address", {},
+                                ).get("city")
+                            ),
+                            "town": (
+                                result.get(
+                                    "address", {},
+                                ).get("town")
+                            ),
+                            "area": (
+                                result.get(
+                                    "address", {},
+                                ).get("suburb")
+                            ),
+                            "street": (
+                                result.get(
+                                    "address", {},
+                                ).get("road")
+                            ),
+                            "search_query": query,
+                            "source": "business_clue",
+                        }
+                    )
+
+            except Exception as e:
+
+                print(
+                    "BUSINESS SEARCH ERROR:",
+                    query,
+                    str(e),
+                )
+
+        # ----------------------------------------------------
+        # 2. VISIBLE TEXT — FREE-FORM NOMINATIM SEARCH
+        # ----------------------------------------------------
+        # Remaining visible_text items that were not
+        # already searched as business/clue names.
+        # This is the secondary OCR strategy.
 
         ocr_queries = []
 
@@ -576,6 +672,20 @@ class LocationCandidateService:
             or []
         )
 
+        business_names = (
+            vision_result.get(
+                "business_names"
+            )
+            or []
+        )
+
+        searchable_clues = (
+            vision_result.get(
+                "searchable_clues"
+            )
+            or []
+        )
+
         # Check whether the vision result has
         # actual text evidence or high enough
         # confidence to trust its city/street.
@@ -584,6 +694,8 @@ class LocationCandidateService:
         # would validate the hallucination.
         _text_evidence_or_high_conf = bool(
             visible_text
+            or business_names
+            or searchable_clues
         ) or (
             vision_result.get("confidence", 0)
             or 0
@@ -893,6 +1005,8 @@ class LocationCandidateService:
                     place_names=place_names,
                     house_number=house_number,
                     visible_text=visible_text,
+                    business_names=business_names,
+                    searchable_clues=searchable_clues,
                 )
             )
 

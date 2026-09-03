@@ -339,25 +339,51 @@ class ImageEvidenceFusion:
             )
 
         # --- Resolver / OSM verification (max 18) ---
+        # CIRCULAR SCORING FIX: the resolver is
+        # called with the city from vision/candidate
+        # results, so it tends to confirm whatever
+        # city was fed to it.  Full points are only
+        # awarded when an INDEPENDENT signal (OCR,
+        # StreetCLIP, EXIF, or landmark) also
+        # supports the resolver's city.
         if resolver_city_str:
+            _has_independent = (
+                scores.get("ocr_verified", 0) > 0
+                or scores.get("exif", 0) > 0
+                or scores.get("landmark_match", 0) > 0
+                or (
+                    sc_city
+                    and cls._cities_agree(
+                        sc_city,
+                        resolver_city_str,
+                    )
+                )
+            )
             if cls._cities_agree(
                 resolver_city_str, top_city
             ):
-                scores["resolver_city"] = (
-                    cls.WEIGHTS["resolver_city"]
-                )
-                evidence_signals.append(
-                    f"OSM verified: "
-                    f"{resolver_city_str}"
-                )
+                if _has_independent:
+                    scores["resolver_city"] = (
+                        cls.WEIGHTS["resolver_city"]
+                    )
+                    evidence_signals.append(
+                        f"OSM verified + independent: "
+                        f"{resolver_city_str}"
+                    )
+                else:
+                    scores["resolver_city"] = 5
+                    evidence_signals.append(
+                        f"OSM: {resolver_city_str} "
+                        f"(no independent corroboration)"
+                    )
             else:
-                scores["resolver_city"] = 5
+                scores["resolver_city"] = 3
                 evidence_signals.append(
                     f"OSM: {resolver_city_str} "
                     f"(disagrees)"
                 )
         elif precise_location:
-            scores["resolver_city"] = 3
+            scores["resolver_city"] = 2
             evidence_signals.append(
                 "OSM resolver ran but no city"
             )
@@ -386,15 +412,34 @@ class ImageEvidenceFusion:
             vision_result.get("visible_text")
             or []
         )
-        if visible_text:
+        business_names = (
+            vision_result.get("business_names")
+            or []
+        )
+        searchable_clues = (
+            vision_result.get("searchable_clues")
+            or []
+        )
+        # Business names / searchable clues that
+        # were found in OSM count as strong OCR.
+        _all_ocr_items = (
+            business_names
+            + searchable_clues
+            + visible_text
+        )
+        if _all_ocr_items:
             candidate_evidence = (
                 candidate_result.get("evidence", [])
                 if candidate_result
                 else []
             )
+            # Also check if business_clue source
+            # was used in the candidate result.
             ocr_matched = any(
                 "visible text matches" in str(e)
                 or "text match" in str(e)
+                or "business" in str(e).lower()
+                or "search_query" in str(e)
                 for e in candidate_evidence
             )
             if ocr_matched:
@@ -403,7 +448,7 @@ class ImageEvidenceFusion:
                 )
                 evidence_signals.append(
                     f"OCR verified: "
-                    f"{visible_text[:3]}"
+                    f"{_all_ocr_items[:3]}"
                 )
             else:
                 scores["ocr_text"] = (
@@ -411,14 +456,20 @@ class ImageEvidenceFusion:
                 )
                 evidence_signals.append(
                     f"OCR text found: "
-                    f"{visible_text[:3]}"
+                    f"{_all_ocr_items[:3]}"
                 )
 
         # --- Landmark match (max 5) ---
         vision_landmarks = (
             vision_result.get("landmarks") or []
         )
-        if vision_landmarks:
+        landmark_names = (
+            vision_result.get("landmark_names") or []
+        )
+        _all_landmarks = (
+            vision_landmarks + landmark_names
+        )
+        if _all_landmarks:
             candidate_evidence = (
                 candidate_result.get("evidence", [])
                 if candidate_result

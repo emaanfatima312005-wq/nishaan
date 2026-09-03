@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 
 from fastapi import (
@@ -131,13 +132,40 @@ async def analyze_image(
         db.refresh(location_request)
 
         # ====================================================
-        # 5. GROQ VISION
+        # 5. VISION + EXIF (concurrent)
         # ====================================================
+        # Vision (Groq API call) and EXIF (local byte
+        # parsing) are independent and can run at the
+        # same time.
 
-        vision_result = await analyzer.analyze_image(
-            image_bytes=image_bytes,
-            content_type=image.content_type,
+        async def _run_vision():
+            return await analyzer.analyze_image(
+                image_bytes=image_bytes,
+                content_type=image.content_type,
+            )
+
+        async def _run_exif():
+            try:
+                return (
+                    ExifService.extract_gps(
+                        image_bytes
+                    )
+                )
+            except Exception:
+                return None
+
+        _vision_exif = await asyncio.gather(
+            _run_vision(),
+            _run_exif(),
+            return_exceptions=True,
         )
+
+        _v_res = _vision_exif[0]
+        _e_res = _vision_exif[1]
+
+        if isinstance(_v_res, Exception):
+            raise _v_res
+        vision_result = _v_res
 
         print("=" * 60)
         print("IMAGE AI RESULT")
@@ -155,158 +183,182 @@ async def analyze_image(
         exif_location = None
 
         # ====================================================
-        # 7. EXIF GPS
+        # 7. EXIF GPS (already ran concurrently above)
         # ====================================================
 
-        try:
+        if (
+            _e_res
+            and not isinstance(_e_res, Exception)
+        ):
+            exif_location = _e_res
 
-            exif_location = (
-                ExifService.extract_gps(
-                    image_bytes
-                )
-            )
+        if exif_location:
 
-            if exif_location:
+            latitude = exif_location[
+                "latitude"
+            ]
 
-                latitude = exif_location[
-                    "latitude"
-                ]
+            longitude = exif_location[
+                "longitude"
+            ]
 
-                longitude = exif_location[
-                    "longitude"
-                ]
-
-                gps_source = "exif"
-
-                print("=" * 60)
-                print("EXIF GPS FOUND")
-                print(
-                    "Latitude:",
-                    latitude,
-                )
-                print(
-                    "Longitude:",
-                    longitude,
-                )
-                print("=" * 60)
-
-            else:
-
-                print("=" * 60)
-                print("NO EXIF GPS FOUND")
-                print("=" * 60)
-
-        except Exception as exif_error:
+            gps_source = "exif"
 
             print("=" * 60)
-            print("EXIF ERROR")
+            print("EXIF GPS FOUND")
             print(
-                "ERROR TYPE:",
-                type(exif_error).__name__,
+                "Latitude:",
+                latitude,
             )
             print(
-                "ERROR:",
-                str(exif_error),
+                "Longitude:",
+                longitude,
             )
             print("=" * 60)
 
-        # ====================================================
-        # 8. STREETCLIP
-        # ====================================================
+        else:
 
+            print("=" * 60)
+            print("NO EXIF GPS FOUND")
+            print("=" * 60)
+
+        # ====================================================
+        # 7b. FAST PATH CHECK
+        # ====================================================
+        # When the vision model found strong readable
+        # clues (business name, sign, landmark),
+        # skip the heavy CLIP models and use only
+        # the OCR-based pipeline.
+
+        _business = (
+            vision_result.get("business_names") or []
+        )
+        _searchable = (
+            vision_result.get("searchable_clues") or []
+        )
+        _street_names = (
+            vision_result.get("street_names") or []
+        )
+        _vision_conf = (
+            vision_result.get("confidence") or 0
+        )
+
+        _has_strong_clues = bool(
+            _business
+            or _searchable
+            or _street_names
+        ) and _vision_conf >= 40
+
+        # Initialize fallback values for the case
+        # where CLIP models are skipped.
         streetclip_country = []
         streetclip_region = []
         streetclip_city = []
+        geoclip_predictions = []
 
-        try:
+        if _has_strong_clues:
+            print("=" * 60)
+            print(
+                "FAST PATH: strong clues found — "
+                "skipping GeoCLIP/StreetCLIP"
+            )
+            print(
+                "Business:", _business
+            )
+            print(
+                "Searchable:", _searchable
+            )
+            print("=" * 60)
 
-            streetclip_country = (
-                StreetCLIPService.classify_country(
-                    image_bytes
+        else:
+
+            # ========================================
+            # 8 + 9. STREETCLIP + GEOCLIP (concurrent)
+            # ========================================
+            # Both models are independent and can
+            # run at the same time.
+
+            async def _run_streetclip():
+                try:
+                    c = (
+                        StreetCLIPService
+                        .classify_country(
+                            image_bytes
+                        )
+                    )
+                    r = (
+                        StreetCLIPService
+                        .classify_pakistan_region(
+                            image_bytes
+                        )
+                    )
+                    ci = (
+                        StreetCLIPService
+                        .classify_pakistan_city(
+                            image_bytes
+                        )
+                    )
+                    return c, r, ci
+                except Exception:
+                    return [], [], []
+
+            async def _run_geoclip():
+                try:
+                    return (
+                        GeoCLIPService
+                        .predict_pakistan(
+                            image_bytes=image_bytes,
+                            filename=(
+                                image.filename
+                                or "image.jpg"
+                            ),
+                            top_k=10,
+                        )
+                    )
+                except Exception:
+                    return []
+
+            _sc_res, _gc_res = (
+                await asyncio.gather(
+                    _run_streetclip(),
+                    _run_geoclip(),
+                    return_exceptions=True,
                 )
             )
 
-            streetclip_region = (
-                StreetCLIPService.classify_pakistan_region(
-                    image_bytes
+            if (
+                not isinstance(
+                    _sc_res, Exception
                 )
-            )
+                and isinstance(_sc_res, tuple)
+            ):
+                streetclip_country = (
+                    _sc_res[0] or []
+                )
+                streetclip_region = (
+                    _sc_res[1] or []
+                )
+                streetclip_city = (
+                    _sc_res[2] or []
+                )
 
-            streetclip_city = (
-                StreetCLIPService.classify_pakistan_city(
-                    image_bytes
+            if (
+                not isinstance(
+                    _gc_res, Exception
                 )
-            )
+                and isinstance(_gc_res, list)
+            ):
+                geoclip_predictions = _gc_res
 
             print("=" * 60)
             print("STREETCLIP COUNTRY")
-            print(
-                streetclip_country
-            )
-
+            print(streetclip_country)
             print("STREETCLIP REGION")
-            print(
-                streetclip_region
-            )
-
+            print(streetclip_region)
             print("STREETCLIP CITY")
-            print(
-                streetclip_city
-            )
-            print("=" * 60)
-
-        except Exception as streetclip_error:
-
-            print("=" * 60)
-            print("STREETCLIP ERROR")
-            print(
-                "ERROR TYPE:",
-                type(streetclip_error).__name__,
-            )
-            print(
-                "ERROR:",
-                str(streetclip_error),
-            )
-            print("=" * 60)
-
-        # ====================================================
-        # 9. GEOCLIP
-        # ====================================================
-
-        geoclip_predictions = []
-
-        try:
-
-            geoclip_predictions = (
-                GeoCLIPService.predict_pakistan(
-                    image_bytes=image_bytes,
-                    filename=(
-                        image.filename
-                        or "image.jpg"
-                    ),
-                    top_k=10,
-                )
-            )
-
-            print("=" * 60)
+            print(streetclip_city)
             print("GEOCLIP PREDICTIONS")
-            print(
-                geoclip_predictions
-            )
-            print("=" * 60)
-
-        except Exception as geoclip_error:
-
-            print("=" * 60)
-            print("GEOCLIP ERROR")
-            print(
-                "ERROR TYPE:",
-                type(geoclip_error).__name__,
-            )
-            print(
-                "ERROR:",
-                str(geoclip_error),
-            )
+            print(geoclip_predictions)
             print("=" * 60)
 
         # ====================================================

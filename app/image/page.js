@@ -17,6 +17,10 @@ export default function ImageInputPage() {
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
 
+  // =====================================================
+  // PROCESS FILE
+  // =====================================================
+
   const processFile = (selectedFile) => {
     setError("");
 
@@ -45,10 +49,19 @@ export default function ImageInputPage() {
     reader.readAsDataURL(selectedFile);
   };
 
+  // =====================================================
+  // FILE INPUT
+  // =====================================================
+
   const handleFileChange = (event) => {
     const selectedFile = event.target.files?.[0];
+
     processFile(selectedFile);
   };
+
+  // =====================================================
+  // DRAG & DROP
+  // =====================================================
 
   const handleDrop = (event) => {
     event.preventDefault();
@@ -56,6 +69,7 @@ export default function ImageInputPage() {
     setDragging(false);
 
     const droppedFile = event.dataTransfer.files?.[0];
+
     processFile(droppedFile);
   };
 
@@ -68,6 +82,10 @@ export default function ImageInputPage() {
     setDragging(false);
   };
 
+  // =====================================================
+  // REMOVE FILE
+  // =====================================================
+
   const removeFile = () => {
     setFile(null);
     setPreview("");
@@ -77,6 +95,10 @@ export default function ImageInputPage() {
       fileInputRef.current.value = "";
     }
   };
+
+  // =====================================================
+  // CONTINUE TO ANALYSIS
+  // =====================================================
 
   const continueToAnalysis = () => {
     if (!file || !preview) {
@@ -97,33 +119,104 @@ export default function ImageInputPage() {
   };
 
   return (
-    <main className="relative min-h-[calc(100vh-96px)] overflow-hidden bg-[#fbfcf7] text-[#1A1A1A]">
+    <main
+      className="
+        relative
+        min-h-[calc(100vh-96px)]
+        overflow-hidden
+        bg-[#fbfcf7]
+        text-[#1A1A1A]
+      "
+    >
+      {/* ================================================= */}
+      {/* FULL SCREEN 3D MOSQUE VIDEO BACKGROUND */}
+      {/* ================================================= */}
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          z-0
+          overflow-hidden
+          bg-[#fbfcf7]
+        "
+      >
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className="
+            absolute
+            left-1/2
+            top-1/2
+            h-full
+            w-full
+            min-h-full
+            min-w-full
+            -translate-x-1/2
+            -translate-y-1/2
+            scale-[1.25]
+            object-cover
+            animate-video-fade
+          "
+        >
+          <source src="/videos/Historic_mosque.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Soft overlay */}
+        <div
+          className="
+            absolute
+            inset-0
+            bg-[#fbfcf7]/20
+          "
+        />
+
+        {/* Top and bottom fade */}
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-b
+            from-[#fbfcf7]/40
+            via-transparent
+            to-[#fbfcf7]/50
+          "
+        />
+      </div>
+
       {/* ================================================= */}
       {/* BACKGROUND VISUALS */}
       {/* ================================================= */}
 
       {/* LEFT — MINAR */}
+
       <img
         src="/images/minar.png"
         alt=""
         aria-hidden="true"
         className="
-    pointer-events-none
-    absolute
-    left-[-100px]
-    top-[100px]
-    z-0
-    h-[calc(100vh-100px)]
-    w-auto
-    max-w-none
-    opacity-[0.10]
-    select-none
-    lg:block
-    hidden
-  "
+          pointer-events-none
+          absolute
+          left-[-100px]
+          top-[100px]
+          z-[2]
+          hidden
+          h-[calc(100vh-100px)]
+          w-auto
+          max-w-none
+          select-none
+          opacity-[0.10]
+          lg:block
+        "
       />
 
       {/* RIGHT — PAKISTAN MAP */}
+
       <img
         src="/images/map.png"
         alt=""
@@ -133,12 +226,12 @@ export default function ImageInputPage() {
           absolute
           right-[-80px]
           top-[200px]
-          z-0
-          w-[500px]
-          opacity-[0.07]
-          select-none
-          lg:block
+          z-[2]
           hidden
+          w-[500px]
+          select-none
+          opacity-[0.07]
+          lg:block
         "
       />
 
@@ -146,7 +239,18 @@ export default function ImageInputPage() {
       {/* PROGRESS */}
       {/* ================================================= */}
 
-      <div className="relative z-10 mx-auto max-w-5xl px-5 pt-8 sm:px-8 lg:px-10">
+      <div
+        className="
+          relative
+          z-10
+          mx-auto
+          max-w-5xl
+          px-5
+          pt-8
+          sm:px-8
+          lg:px-10
+        "
+      >
         <div className="flex items-center">
           <Step number="1" label="Input" active />
 
@@ -164,21 +268,63 @@ export default function ImageInputPage() {
       {/* MAIN CONTENT */}
       {/* ================================================= */}
 
-      <section className="relative z-10 mx-auto flex min-h-[620px] max-w-4xl flex-col items-center px-5 py-12 sm:px-8 lg:py-16">
-        {/* Heading */}
+      <section
+        className="
+          relative
+          z-10
+          mx-auto
+          flex
+          min-h-[620px]
+          max-w-4xl
+          flex-col
+          items-center
+          px-5
+          py-12
+          sm:px-8
+          lg:py-16
+        "
+      >
+        {/* ================================================= */}
+        {/* HEADING */}
+        {/* ================================================= */}
 
         <div className="mb-8 text-center">
-          {/* Small Label */}
-
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#5FAF5F]">
+          <p
+            className="
+              mb-3
+              text-xs
+              font-semibold
+              uppercase
+              tracking-[0.3em]
+              text-[#5FAF5F]
+            "
+          >
             Location Discovery
           </p>
 
-          <h1 className="text-3xl font-semibold tracking-tight text-[#0D3B0D] sm:text-4xl">
+          <h1
+            className="
+              text-3xl
+              font-semibold
+              tracking-tight
+              text-[#0D3B0D]
+              sm:text-4xl
+            "
+          >
             Image Input
           </h1>
 
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#1A1A1A]/70 sm:text-base">
+          <p
+            className="
+              mx-auto
+              mt-3
+              max-w-xl
+              text-sm
+              leading-6
+              text-[#1A1A1A]/70
+              sm:text-base
+            "
+          >
             Upload an image and let Nishaan analyze the visual clues to discover
             where the place might be.
           </p>
@@ -210,22 +356,56 @@ export default function ImageInputPage() {
               transition-all
               ${
                 dragging
-                  ? "border-[#5FAF5F] bg-[#C8E6C9]"
-                  : "border-[#5FAF5F] bg-white"
+                  ? "border-[#5FAF5F] bg-[#C8E6C9]/90"
+                  : "border-[#5FAF5F] bg-white/90 backdrop-blur-sm"
               }
             `}
           >
             {/* Upload Icon */}
 
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#C8E6C9]">
-              <FiUploadCloud className="text-4xl text-[#2F6B2F]" />
+            <div
+              className="
+                mb-5
+                flex
+                h-16
+                w-16
+                items-center
+                justify-center
+                rounded-full
+                bg-[#C8E6C9]
+              "
+            >
+              <FiUploadCloud
+                className="
+                  text-4xl
+                  text-[#2F6B2F]
+                "
+              />
             </div>
 
-            <h2 className="text-lg font-semibold text-[#1A1A1A]">
+            {/* Heading */}
+
+            <h2
+              className="
+                text-lg
+                font-semibold
+                text-[#1A1A1A]
+              "
+            >
               Drag & drop an image here
             </h2>
 
-            <p className="my-2 text-sm text-[#1A1A1A]/60">or</p>
+            {/* OR */}
+
+            <p
+              className="
+                my-2
+                text-sm
+                text-[#1A1A1A]/60
+              "
+            >
+              or
+            </p>
 
             {/* Choose File */}
 
@@ -249,6 +429,8 @@ export default function ImageInputPage() {
               Choose File
             </button>
 
+            {/* Hidden File Input */}
+
             <input
               ref={fileInputRef}
               type="file"
@@ -257,7 +439,15 @@ export default function ImageInputPage() {
               className="hidden"
             />
 
-            <p className="mt-5 text-xs text-[#1A1A1A]/60">
+            {/* Supported Formats */}
+
+            <p
+              className="
+                mt-5
+                text-xs
+                text-[#1A1A1A]/60
+              "
+            >
               Supported formats: JPG, PNG, WEBP (Max 10MB)
             </p>
           </div>
@@ -266,12 +456,38 @@ export default function ImageInputPage() {
           /* SELECTED IMAGE */
           /* ================================================= */
 
-          <div className="w-full max-w-2xl rounded-2xl border border-[#C8E6C9] bg-white p-4 shadow-sm sm:p-6">
-            <div className="relative overflow-hidden rounded-xl bg-[#C8E6C9]">
+          <div
+            className="
+              w-full
+              max-w-2xl
+              rounded-2xl
+              border
+              border-[#C8E6C9]
+              bg-white/95
+              p-4
+              shadow-sm
+              backdrop-blur-sm
+              sm:p-6
+            "
+          >
+            {/* Image Preview */}
+
+            <div
+              className="
+                relative
+                overflow-hidden
+                rounded-xl
+                bg-[#C8E6C9]
+              "
+            >
               <img
                 src={preview}
                 alt="Selected image"
-                className="max-h-[380px] w-full object-contain"
+                className="
+                  max-h-[380px]
+                  w-full
+                  object-contain
+                "
               />
 
               {/* Remove */}
@@ -303,17 +519,46 @@ export default function ImageInputPage() {
 
             {/* File Information */}
 
-            <div className="mt-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#C8E6C9]">
+            <div
+              className="
+                mt-4
+                flex
+                items-center
+                gap-3
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-10
+                  w-10
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-[#C8E6C9]
+                "
+              >
                 <FiImage className="text-[#2F6B2F]" />
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-[#1A1A1A]">
+                <p
+                  className="
+                    truncate
+                    text-sm
+                    font-semibold
+                    text-[#1A1A1A]
+                  "
+                >
                   {file?.name}
                 </p>
 
-                <p className="text-xs text-[#1A1A1A]/60">
+                <p
+                  className="
+                    text-xs
+                    text-[#1A1A1A]/60
+                  "
+                >
                   {file ? (file.size / 1024 / 1024).toFixed(2) : "0.00"} MB
                 </p>
               </div>
@@ -326,7 +571,17 @@ export default function ImageInputPage() {
         {/* ================================================= */}
 
         {error && (
-          <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+          <p
+            className="
+              mt-4
+              rounded-lg
+              bg-red-50
+              px-4
+              py-2
+              text-sm
+              text-red-600
+            "
+          >
             {error}
           </p>
         )}
@@ -370,7 +625,14 @@ export default function ImageInputPage() {
 
 function Step({ number, label, active = false }) {
   return (
-    <div className="flex min-w-0 flex-col items-center">
+    <div
+      className="
+        flex
+        min-w-0
+        flex-col
+        items-center
+      "
+    >
       <div
         className={`
           flex

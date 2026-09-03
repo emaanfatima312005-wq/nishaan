@@ -230,7 +230,19 @@ export default function FAQs() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">
+    <main className="relative min-h-screen text-[#1A1A1A] overflow-hidden">
+      {/* ================================================= */}
+      {/* FULL PAGE BACKGROUND IMAGE */}
+      {/* ================================================= */}
+
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <img
+          src="/images/download.png"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.25]"
+        />
+      </div>
+
       {/* ================================================= */}
       {/* HERO */}
       {/* ================================================= */}
@@ -382,8 +394,8 @@ export default function FAQs() {
 
             <Link
               href="/explore"
-              className="inline-block mt-7 px-7 py-3 rounded-xl bg-[#5FAF5F] text-white font-semibold
-              hover:bg-[#2F6B2F] hover:-translate-y-1
+              className="inline-block mt-7 px-7 py-3 rounded-xl bg-[#5FAF5F] text-white font-semibold 
+              hover:bg-[#2F6B2F] hover:-translate-y-1 
               transition-all duration-300"
             >
               Explore

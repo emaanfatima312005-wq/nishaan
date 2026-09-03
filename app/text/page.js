@@ -46,7 +46,6 @@ export default function TextInputPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-
       {/* =====================================================
           BACKGROUND IMAGE
       ===================================================== */}
@@ -70,25 +69,20 @@ export default function TextInputPage() {
 
       <div className="absolute inset-0 bg-[#0D3B0D]/55" />
 
-
       {/* =====================================================
           CONTENT
       ===================================================== */}
 
       <div className="relative z-10 min-h-screen text-[#1A1A1A]">
-
         {/* =====================================================
             PROGRESS STEPS
         ===================================================== */}
 
         <section className="max-w-5xl mx-auto px-6 pt-10">
-
           <div className="flex items-center justify-center">
-
             {/* STEP 1 */}
 
             <div className="flex flex-col items-center">
-
               <div className="w-9 h-9 rounded-full bg-[#fbfcf7] text-[#0D3B0D] flex items-center justify-center text-sm font-bold shadow-sm">
                 1
               </div>
@@ -96,66 +90,48 @@ export default function TextInputPage() {
               <span className="mt-2 text-xs font-semibold text-[#fbfcf7]">
                 Input
               </span>
-
             </div>
-
 
             {/* LINE */}
 
             <div className="w-20 md:w-40 h-px bg-[#5FAF5F] mb-6 opacity-70" />
-
 
             {/* STEP 2 */}
 
             <div className="flex flex-col items-center">
-
               <div className="w-9 h-9 rounded-full bg-[#2F6B2F] border border-[#5FAF5F] text-[#C8E6C9] flex items-center justify-center text-sm font-semibold">
                 2
               </div>
 
-              <span className="mt-2 text-xs text-[#C8E6C9]">
-                Analyzing
-              </span>
-
+              <span className="mt-2 text-xs text-[#C8E6C9]">Analyzing</span>
             </div>
-
 
             {/* LINE */}
 
             <div className="w-20 md:w-40 h-px bg-[#5FAF5F] mb-6 opacity-70" />
 
-
             {/* STEP 3 */}
 
             <div className="flex flex-col items-center">
-
               <div className="w-9 h-9 rounded-full bg-[#2F6B2F] border border-[#5FAF5F] text-[#C8E6C9] flex items-center justify-center text-sm font-semibold">
                 3
               </div>
 
-              <span className="mt-2 text-xs text-[#C8E6C9]">
-                Result
-              </span>
-
+              <span className="mt-2 text-xs text-[#C8E6C9]">Result</span>
             </div>
-
           </div>
-
         </section>
-
 
         {/* =====================================================
             MAIN CONTENT
         ===================================================== */}
 
         <section className="max-w-3xl mx-auto px-6 py-12">
-
           {/* ===================================================
               HEADING
           =================================================== */}
 
           <div className="text-center">
-
             {/* LOCATION ICON */}
 
             <div
@@ -177,30 +153,25 @@ export default function TextInputPage() {
               <FiMapPin size={24} />
             </div>
 
-
             {/* HEADING */}
 
             <h1 className="text-3xl md:text-5xl font-semibold text-[#fbfcf7]">
               Describe the Place
             </h1>
 
-
             {/* DESCRIPTION */}
 
             <p className="mt-4 max-w-xl mx-auto text-sm md:text-base leading-7 text-[#C8E6C9]">
-              Tell Nishaan what you remember about the location.
-              Even the smallest clue can help us find the place.
+              Tell Nishaan what you remember about the location. Even the
+              smallest clue can help us find the place.
             </p>
-
           </div>
-
 
           {/* ===================================================
               FORM
           =================================================== */}
 
           <form onSubmit={handleSubmit} className="mt-10">
-
             <div
               className="
                 rounded-3xl
@@ -212,13 +183,11 @@ export default function TextInputPage() {
                 md:p-7
               "
             >
-
               {/* =================================================
                   LABEL
               ================================================= */}
 
               <div className="flex items-center justify-between mb-3">
-
                 <label
                   htmlFor="location-clue"
                   className="text-sm font-bold text-[#0D3B0D]"
@@ -229,9 +198,7 @@ export default function TextInputPage() {
                 <span className="text-xs font-medium text-[#2F6B2F]">
                   {text.length}/{MAX_LENGTH}
                 </span>
-
               </div>
-
 
               {/* =================================================
                   TEXT AREA
@@ -267,7 +234,6 @@ export default function TextInputPage() {
                 "
               />
 
-
               {/* =================================================
                   EXAMPLE
               ================================================= */}
@@ -282,31 +248,24 @@ export default function TextInputPage() {
                   p-4
                 "
               >
-
-                <p className="text-xs font-bold text-[#0D3B0D] mb-1">
-                  Example
-                </p>
+                <p className="text-xs font-bold text-[#0D3B0D] mb-1">Example</p>
 
                 <p className="text-xs md:text-sm leading-6 text-[#2F6B2F]">
-                  "There was a large mosque near the old market. 
-                  The mosque had a green gate, and a tall minaret could be seen."
+                  "There was a large mosque near the old market. The mosque had
+                  a green gate, and a tall minaret could be seen."
                 </p>
-
               </div>
-
 
               {/* =================================================
                   HELPFUL CLUES
               ================================================= */}
 
               <div className="mt-5">
-
                 <p className="text-xs font-bold text-[#0D3B0D] mb-3">
                   Helpful clues
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-
                   {[
                     "Landmarks",
                     "Roads",
@@ -315,7 +274,6 @@ export default function TextInputPage() {
                     "Mosques",
                     "Shops",
                   ].map((clue) => (
-
                     <span
                       key={clue}
                       className="
@@ -332,24 +290,17 @@ export default function TextInputPage() {
                     >
                       {clue}
                     </span>
-
                   ))}
-
                 </div>
-
               </div>
-
 
               {/* =================================================
                   ERROR
               ================================================= */}
 
               {error && (
-                <p className="mt-4 text-sm font-medium text-red-600">
-                  {error}
-                </p>
+                <p className="mt-4 text-sm font-medium text-red-600">{error}</p>
               )}
-
 
               {/* =================================================
                   BUTTON
@@ -385,35 +336,22 @@ export default function TextInputPage() {
                 "
               >
                 Find Location
-
                 <FiArrowRight size={18} />
               </button>
-
             </div>
-
           </form>
-
 
           {/* ===================================================
               BOTTOM MESSAGE
           =================================================== */}
 
           <p className="mt-7 text-center text-xs text-[#C8E6C9]">
-
             Nishaan turns memories into meaningful clues.
-
-            <span className="mx-2 text-[#5FAF5F]">
-              •
-            </span>
-
+            <span className="mx-2 text-[#5FAF5F]">•</span>
             From Pakistan to the world.
-
           </p>
-
         </section>
-
       </div>
-
     </main>
   );
 }

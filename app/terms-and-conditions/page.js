@@ -9,7 +9,19 @@ import {
 
 export default function termsAndConditions() {
   return (
-    <main className="min-h-screen bg-[#fbfcf7] text-[#1A1A1A]">
+    <main className="relative min-h-screen text-[#1A1A1A] overflow-hidden">
+      {/* ================================================= */}
+      {/* FULL PAGE BACKGROUND IMAGE */}
+      {/* ================================================= */}
+
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <img
+          src="/images/download.png"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.25]"
+        />
+      </div>
+
       {/* ================================================= */}
       {/* HEADER */}
       {/* ================================================= */}

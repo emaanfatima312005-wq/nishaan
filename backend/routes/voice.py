@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-from fastapi import APIRouter, UploadFile, File, HTTPException
-
-from services.voice_service import transcribe_audio
-=======
 from fastapi import (
     APIRouter,
     UploadFile,
@@ -32,7 +27,6 @@ from services.ai.location_analyzer import (
 from services.universal_location_resolver import (
     UniversalLocationResolver,
 )
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
 
 
 router = APIRouter(
@@ -41,19 +35,6 @@ router = APIRouter(
 )
 
 
-<<<<<<< HEAD
-@router.post("/voice")
-async def analyze_voice(
-    audio: UploadFile = File(...)
-):
-
-    try:
-
-        # Read uploaded audio
-        audio_bytes = await audio.read()
-
-        if not audio_bytes:
-=======
 analyzer = LocationAnalyzer()
 
 
@@ -107,15 +88,11 @@ async def analyze_voice(
 
         if not audio_bytes:
 
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
             raise HTTPException(
                 status_code=400,
                 detail="Audio file is empty.",
             )
 
-<<<<<<< HEAD
-        # Send audio to Groq Whisper
-=======
         # ====================================================
         # 3. SAVE REQUEST
         # ====================================================
@@ -138,7 +115,6 @@ async def analyze_voice(
         # 4. WHISPER
         # ====================================================
 
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
         transcription = await transcribe_audio(
             (
                 audio.filename,
@@ -147,21 +123,6 @@ async def analyze_voice(
             )
         )
 
-<<<<<<< HEAD
-        return {
-            "status": "success",
-            "filename": audio.filename,
-            "transcription": transcription,
-        }
-
-    except Exception as e:
-
-        print("VOICE ERROR:", e)
-
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to transcribe audio.",
-=======
         if (
             not transcription
             or not transcription.strip()
@@ -433,5 +394,4 @@ async def analyze_voice(
         raise HTTPException(
             status_code=500,
             detail=str(exc),
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
         )

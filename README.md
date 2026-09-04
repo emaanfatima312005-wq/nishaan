@@ -1,14 +1,3 @@
----
-title: Nishaan
-emoji: 📍
-colorFrom: green
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
-short_description: AI-powered location discovery for Pakistan
----
-
 # Nishaan 🇵🇰
 
 ### AI-Powered Local Location Discovery for Pakistan
@@ -648,19 +637,40 @@ http://localhost:7860
 
 See [backend/.env.example](backend/.env.example) for details.
 
-## Deploying to Hugging Face Spaces
+## Deploying to Modal (backend) + Vercel (frontend)
 
-The repository is already configured for a Hugging Face
-Docker Space (app port 7860, models pre-downloaded at
-build time):
+The recommended free deployment runs the AI backend on
+[Modal](https://modal.com) (Starter plan: $30/month of free
+compute credits, no credit card) and the frontend on
+[Vercel](https://vercel.com) (free tier, always-on CDN).
 
-1. Create a Docker Space at [huggingface.co/new-space](https://huggingface.co/new-space).
-2. Push this repository to the Space's git remote.
-3. Add `GROQ_API_KEY`, `DATABASE_URL` and
-   `MAPILLARY_ACCESS_TOKEN` as Space **secrets**.
+### Backend — Modal
 
-The Space builds the image and serves the whole application
-on its public URL.
+1. Create a free [Modal](https://modal.com/signup) account.
+2. In the Modal dashboard create a secret named
+   `nishaan-secrets` containing `GROQ_API_KEY`,
+   `DATABASE_URL`, `MAPILLARY_ACCESS_TOKEN` and
+   `ALLOWED_ORIGINS` (the frontend URL, e.g.
+   `https://your-app.vercel.app`).
+3. Authenticate and deploy from the repository root:
+
+```bash
+pip install modal
+modal token new
+modal deploy modal_app.py
+```
+
+The API is served at the URL printed by the deploy command
+(`https://<workspace>--nishaan-api.modal.run`). The first
+request after a deploy loads the AI models (a few minutes);
+later cold starts restore from a memory snapshot in seconds.
+
+### Frontend — Vercel
+
+Import the repository into Vercel and set the
+`NEXT_PUBLIC_API_URL` environment variable to the Modal API
+URL before the first build, so the frontend calls the right
+backend.
 
 ---
 

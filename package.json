@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "@vnedyalk0v/react19-simple-maps": "^2.0.10",
     "aos": "^2.3.4",
     "leaflet": "^1.9.4",
@@ -17,6 +19,7 @@
     "react-dom": "19.2.8",
     "react-icons": "^5.7.0",
     "react-leaflet": "^5.0.0",
+    "three": "^0.185.1",
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {

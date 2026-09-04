@@ -10,7 +10,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function ImageInputPage() {
   const router = useRouter();
-  const fileInputRef = useRef(null);
+const fileInputRef = useRef(null);
 
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
@@ -442,6 +442,7 @@ export default function ImageInputPage() {
             </p>
           </div>
         ) : (
+          
           /* ================================================= */
           /* SELECTED IMAGE */
           /* ================================================= */

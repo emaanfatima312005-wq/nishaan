@@ -162,9 +162,6 @@ pnpm-debug.log*
 # Misc
 # -----------------------------
 .cache/
-<<<<<<< HEAD
-.temp/
-=======
 .temp/
 
 # -----------------------------
@@ -176,4 +173,16 @@ backend/data/alternateNames.zip
 
 # Backend runtime uploads
 backend/uploads/
->>>>>>> 850d413663328ed8eb29506bcbc60f7503ca4889
+
+# -----------------------------
+# Deployment
+# -----------------------------
+
+# Next.js static export output
+out/
+
+# Built frontend served by the backend
+backend/static/
+
+# Accidental credentials file
+witch -c safoora-WORK abc1234

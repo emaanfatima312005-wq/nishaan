@@ -597,6 +597,62 @@ http://localhost:3000
 
 ---
 
+# 🚢 Deployment (Docker)
+
+Nishaan ships as a **single Docker container**: the
+Next.js frontend is exported to static files and served by
+the FastAPI backend from the same origin, alongside the
+GeoCLIP and StreetCLIP image-geolocation models.
+
+## Build the image
+
+```bash
+docker build -t nishaan .
+```
+
+## Run it
+
+```bash
+docker run --rm -p 7860:7860 \
+  -e GROQ_API_KEY=your_groq_key \
+  -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+  -e MAPILLARY_ACCESS_TOKEN=your_token \
+  nishaan
+```
+
+The full application (frontend + API) is then available at:
+
+```text
+http://localhost:7860
+```
+
+## Required environment variables
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `GROQ_API_KEY` | Yes | Groq API key for AI analysis and transcription |
+| `DATABASE_URL` | Yes | PostgreSQL connection string with PostGIS (e.g. [Neon](https://neon.tech)) — the extension is enabled automatically at startup |
+| `MAPILLARY_ACCESS_TOKEN` | Optional | Enables nearby Mapillary imagery |
+| `ALLOWED_ORIGINS` | Optional | Comma-separated CORS origins (only needed when frontend and backend run on separate origins) |
+
+See [backend/.env.example](backend/.env.example) for details.
+
+## Deploying to Hugging Face Spaces
+
+The repository is already configured for a Hugging Face
+Docker Space (app port 7860, models pre-downloaded at
+build time):
+
+1. Create a Docker Space at [huggingface.co/new-space](https://huggingface.co/new-space).
+2. Push this repository to the Space's git remote.
+3. Add `GROQ_API_KEY`, `DATABASE_URL` and
+   `MAPILLARY_ACCESS_TOKEN` as Space **secrets**.
+
+The Space builds the image and serves the whole application
+on its public URL.
+
+---
+
 # 🧪 Testing
 
 Nishaan contains dedicated tests for important components of the geographic pipeline.

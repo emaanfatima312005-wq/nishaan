@@ -1,0 +1,42 @@
+# Never copy secrets or local state into the image
+.env
+.env.*
+backend/.env
+backend/.env.*
+
+# Version control and local tooling
+.git
+.gitignore
+.vscode
+.idea
+
+# Build outputs and dependencies
+node_modules
+.next
+out
+backend/static
+backend/venv
+backend/__pycache__
+backend/**/__pycache__
+backend/*.pyc
+
+# Local test artifacts
+backend/test_images
+backend/uploads
+backend/test_*.py
+backend/requirements-frozen.txt
+
+# Deployment platform metadata
+.vercel
+.readmehf
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Accidental credentials file (do not ship)
+witch -c safoora-WORK abc1234
+
+# Docs are not needed inside the image
+*.md
+!backend/data/readme.txt

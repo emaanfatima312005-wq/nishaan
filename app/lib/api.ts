@@ -1,12 +1,26 @@
 // app/lib/api.ts
 
+// Backend base URL.
+//
+// In production the backend serves the frontend itself, so
+// API calls use relative paths. In development the frontend
+// runs on port 3000 and the backend on port 8000.
+//
+// Override with NEXT_PUBLIC_API_URL when frontend and backend
+// run on separate origins.
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production"
+    ? ""
+    : "http://127.0.0.1:8000");
+
 export async function analyzeVoice(file: File) {
   const formData = new FormData();
 
   formData.append("audio", file);
 
   const response = await fetch(
-    "http://127.0.0.1:8000/api/analyze/voice",
+    `${API_BASE}/api/analyze/voice`,
     {
       method: "POST",
       body: formData,
@@ -26,7 +40,7 @@ export async function analyzeVoice(file: File) {
 
 export async function analyzeText(clue: string) {
   const response = await fetch(
-    "http://127.0.0.1:8000/api/location/analyze",
+    `${API_BASE}/api/location/analyze`,
     {
       method: "POST",
       headers: {
@@ -81,7 +95,7 @@ export async function analyzeImageFromBase64(
   formData.append("image", file);
 
   const response = await fetch(
-    "http://127.0.0.1:8000/api/analyze/image",
+    `${API_BASE}/api/analyze/image`,
     {
       method: "POST",
       body: formData,

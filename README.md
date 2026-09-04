@@ -1,3 +1,14 @@
+---
+title: Nishaan
+emoji: 📍
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: AI-powered location discovery for Pakistan
+---
+
 # Nishaan 🇵🇰
 
 ### AI-Powered Local Location Discovery for Pakistan

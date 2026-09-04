@@ -13,8 +13,14 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # while configuring a deployment) — the API and frontend
 # are still served, and database-dependent endpoints
 # return a clear error instead of crashing at import time.
+#
+# pool_pre_ping recycles connections dropped by
+# serverless databases (e.g. Neon) after idle periods.
 engine = (
-    create_engine(DATABASE_URL)
+    create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+    )
     if DATABASE_URL
     else None
 )

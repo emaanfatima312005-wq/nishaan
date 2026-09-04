@@ -35,7 +35,8 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/app/hf-cache
 
 # libgomp1 is required by torch on CPU
 RUN apt-get update \
@@ -59,11 +60,14 @@ COPY --from=frontend /build/out ./static
 
 # Pre-download the ML models (GeoCLIP + StreetCLIP) so the
 # first request does not wait for a multi-GB download.
+# HF_HOME pins the cache location so the models are found
+# at runtime regardless of the container user.
 RUN python -c "\
 from services.geoclip_service import GeoCLIPService; \
 from services.streetclip_service import StreetCLIPService; \
 GeoCLIPService.get_pakistan_model(); \
-StreetCLIPService._load_model()"
+StreetCLIPService._load_model()" \
+    && chmod -R a+rX /app/hf-cache
 
 EXPOSE 7860
 

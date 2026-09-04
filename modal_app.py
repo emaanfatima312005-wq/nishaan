@@ -8,7 +8,7 @@ The Next.js frontend runs on Vercel and calls this API.
 One-time setup (run from the repository root):
 
 1. Create a free account: https://modal.com/signup
-2. Create a secret named "nishaan-secrets" in the Modal
+2. Create a secret named "Nishaan" in the Modal
    dashboard with:
        GROQ_API_KEY=...
        DATABASE_URL=...            (Neon Postgres with PostGIS)
@@ -30,7 +30,7 @@ import sys
 import modal
 
 # Backend code is mounted here inside the container.
-BACKEND_DIR = "/root/nishaan"
+BACKEND_DIR = "/root/Nishaan"
 
 # Files/directories inside backend/ that must not be
 # uploaded (virtualenv, secrets, local test artifacts).
@@ -69,6 +69,9 @@ image = (
     .add_local_file(
         "download_models.py",
         "/root/download_models.py",
+        # copy=True bakes the file into the image so the
+        # model-download step below can run during build.
+        copy=True,
     )
     .run_commands("python /root/download_models.py")
     # Backend code is mounted last so code changes do not
@@ -86,7 +89,7 @@ app = modal.App("nishaan")
 @app.cls(
     image=image,
     secrets=[
-        modal.Secret.from_name("nishaan-secrets")
+        modal.Secret.from_name("Nishaan")
     ],
     cpu=2,
     memory=8192,

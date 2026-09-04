@@ -473,6 +473,8 @@ export default function VoicePage() {
                     <span
                       key={index}
                       className={`w-[3px] rounded-full bg-[#5FAF5F] transition-all duration-300 ${
+                        index % 3 !== 0 ? "hidden sm:block" : ""
+                      } ${
                         isRecording ? "animate-voice-wave" : "opacity-40"
                       }`}
                       style={{

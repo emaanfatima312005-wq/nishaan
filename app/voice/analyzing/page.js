@@ -205,7 +205,7 @@ export default function VoiceAnalyzingPage() {
 
             <div className="flex flex-col items-center justify-center">
 
-              <div className="relative flex h-[420px] w-[420px] items-center justify-center md:h-[500px] md:w-[500px]">
+              <div className="relative flex h-[min(420px,88vw)] w-[min(420px,88vw)] items-center justify-center md:h-[500px] md:w-[500px]">
 
                 {/* Outer rings */}
 

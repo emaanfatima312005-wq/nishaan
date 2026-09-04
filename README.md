@@ -644,11 +644,16 @@ The recommended free deployment runs the AI backend on
 compute credits, no credit card) and the frontend on
 [Vercel](https://vercel.com) (free tier, always-on CDN).
 
+**Live deployment:** frontend at
+<https://nishaan-sigma.vercel.app>, API at
+<https://emaan-fatima-312005--nishaan-nishaanapi-api.modal.run>
+(`GET /api/health` returns the service status).
+
 ### Backend — Modal
 
 1. Create a free [Modal](https://modal.com/signup) account.
 2. In the Modal dashboard create a secret named
-   `nishaan-secrets` containing `GROQ_API_KEY`,
+   `Nishaan` containing `GROQ_API_KEY`,
    `DATABASE_URL`, `MAPILLARY_ACCESS_TOKEN` and
    `ALLOWED_ORIGINS` (the frontend URL, e.g.
    `https://your-app.vercel.app`).

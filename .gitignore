@@ -145,6 +145,7 @@ pnpm-debug.log*
 # Vercel / Deployment
 # -----------------------------
 .vercel/
+.vercel-tmp/
 
 # -----------------------------
 # Certificates / Secrets
@@ -186,3 +187,5 @@ backend/static/
 
 # Accidental credentials file
 witch -c safoora-WORK abc1234
+.vercel
+.env*

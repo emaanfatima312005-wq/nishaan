@@ -1,0 +1,14 @@
+# The Python backend is deployed on Modal, not Vercel.
+backend
+modal_app.py
+download_models.py
+
+# Local build output (Vercel builds the app itself)
+out
+
+# Vercel CLI helper scripts
+.vercel-tmp
+
+# Local caches / logs
+.vercel
+*.log

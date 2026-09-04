@@ -623,7 +623,13 @@ Rules:
 
             temperature=0.1,
 
-            max_completion_tokens=3072,
+            # Stay below the Groq free-tier OTPM
+            # limit (1000 output tokens/minute) and
+            # skip the model's internal chain-of-thought
+            # so the whole budget goes to the JSON answer.
+            max_completion_tokens=700,
+
+            reasoning_effort="none",
 
             response_format={
                 "type": "json_object"

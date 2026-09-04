@@ -10,46 +10,49 @@ import {
   FiTarget,
 } from "react-icons/fi";
 
-const stages = [
-  {
-    title: "Reading your clues",
-    description:
-      "Nishaan is understanding the landmarks, buildings and details you described.",
-    location: "Pakistan",
-  },
-  {
-    title: "Searching across Pakistan",
-    description:
-      "Your clues are being compared with possible locations across the country.",
-    location: "Pakistan",
-  },
-  {
-    title: "Narrowing down the province",
-    description:
-      "The clues are pointing toward a specific region.",
-    location: "Punjab",
-  },
-  {
-    title: "Finding the town",
-    description:
-      "Nishaan is checking nearby cities and towns for a stronger match.",
-    location: "Rawalpindi",
-  },
-  {
-    title: "Searching the streets",
-    description:
-      "Roads, landmarks and nearby places are being compared.",
-    location: "Saddar",
-  },
-  {
-    title: "Location found",
-    description:
-      "Nishaan has identified the strongest matching destination.",
-    location: "Saddar, Rawalpindi",
-  },
-];
+function buildStages(province, city, town, street) {
+  return [
+    {
+      title: "Reading your clues",
+      description:
+        "Nishaan is understanding the landmarks, buildings and details you described.",
+      location: "Pakistan",
+    },
+    {
+      title: "Searching across Pakistan",
+      description:
+        "Your clues are being compared with possible locations across the country.",
+      location: "Pakistan",
+    },
+    {
+      title: "Narrowing down the province",
+      description:
+        "The clues are pointing toward a specific region.",
+      location: province || "Finding province...",
+    },
+    {
+      title: "Finding the town",
+      description:
+        "Nishaan is checking nearby cities and towns for a stronger match.",
+      location: city || "Finding city...",
+    },
+    {
+      title: "Searching the streets",
+      description:
+        "Roads, landmarks and nearby places are being compared.",
+      location: town || street || city || "Searching streets...",
+    },
+    {
+      title: "Location found",
+      description:
+        "Nishaan has identified the strongest matching destination.",
+      location:
+        [street, town, city].filter(Boolean).join(", ") || "Location found",
+    },
+  ];
+}
 
-function PakistanMap({ stage }) {
+function PakistanMap({ stage, province, city }) {
   const provinceFound = stage >= 2;
   const cityFound = stage >= 3;
   const streetFound = stage >= 4;
@@ -76,10 +79,7 @@ function PakistanMap({ stage }) {
         </span>
       </div>
 
-      {/* =====================================================
-          MAP
-      ===================================================== */}
-
+      {/* MAP */}
       <div className="relative z-10 w-[68%] max-w-[430px]">
 
         <img
@@ -94,18 +94,16 @@ function PakistanMap({ stage }) {
         {/* Province scanning */}
         {provinceFound && (
           <div className="absolute left-[48%] top-[36%]">
-
             <div className="province-ring" />
 
             <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C8E6C9] shadow-[0_0_18px_6px_#5FAF5F]" />
-
           </div>
         )}
 
         {/* Province label */}
         {provinceFound && (
           <div className="absolute left-[52%] top-[27%] rounded-lg border border-[#5FAF5F]/40 bg-[#0D3B0D]/90 px-3 py-1.5 text-[10px] font-bold tracking-wider text-[#C8E6C9]">
-            PUNJAB
+            {province || "SEARCHING"}
           </div>
         )}
 
@@ -118,7 +116,7 @@ function PakistanMap({ stage }) {
             <div className="relative h-3 w-3 rounded-full bg-[#fbfcf7] shadow-[0_0_15px_5px_#5FAF5F]" />
 
             <div className="absolute left-5 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#fbfcf7] px-3 py-1.5 text-[10px] font-bold text-[#0D3B0D] shadow-lg">
-              Rawalpindi
+              {city || "Finding city..."}
             </div>
 
           </div>
@@ -154,7 +152,7 @@ function PakistanMap({ stage }) {
           </p>
 
           <p className="mt-1 text-sm font-bold text-[#fbfcf7]">
-            {stages[stage].location}
+            {buildStages(province, city)[stage]?.location || "Pakistan"}
           </p>
 
         </div>
@@ -252,27 +250,44 @@ export default function AnalyzingPage() {
   const router = useRouter();
 
   const [stage, setStage] = useState(0);
+  const [locationResult, setLocationResult] = useState(null);
   const apiDoneRef = useRef(false);
 
-  // Start the API call IMMEDIATELY
+  const stages = buildStages(
+    locationResult?.province,
+    locationResult?.city,
+    locationResult?.town,
+    locationResult?.street
+  );
+
+  // Start API call immediately
   useEffect(() => {
     const clue = sessionStorage.getItem("nishaan_text_clue");
+
     if (!clue) return;
 
     analyzeText(clue)
       .then((result) => {
+        setLocationResult(result);
+
         sessionStorage.setItem(
           "nishaan_text_result",
           JSON.stringify(result)
         );
+
         apiDoneRef.current = true;
       })
       .catch((error) => {
         console.error("[Nishaan] Text analysis error:", error);
+
         sessionStorage.setItem(
           "nishaan_text_result",
-          JSON.stringify({ status: "error", message: error.message })
+          JSON.stringify({
+            status: "error",
+            message: error.message,
+          })
         );
+
         apiDoneRef.current = true;
       });
   }, []);
@@ -291,18 +306,20 @@ export default function AnalyzingPage() {
     }, 2200);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [stages.length]);
 
   // When animation finishes, wait for API then navigate
   useEffect(() => {
     if (stage !== stages.length - 1) return;
 
     let pollId;
+
     const timeoutId = setTimeout(() => {
       if (apiDoneRef.current) {
         router.push("/text/result");
         return;
       }
+
       pollId = setInterval(() => {
         if (apiDoneRef.current) {
           clearInterval(pollId);
@@ -313,9 +330,12 @@ export default function AnalyzingPage() {
 
     return () => {
       clearTimeout(timeoutId);
-      if (pollId) clearInterval(pollId);
+
+      if (pollId) {
+        clearInterval(pollId);
+      }
     };
-  }, [stage, router]);
+  }, [stage, router, stages.length]);
 
   const progress = (stage / (stages.length - 1)) * 100;
 
@@ -357,19 +377,19 @@ export default function AnalyzingPage() {
 
       </header>
 
-
       {/* Main */}
       <section className="mx-auto max-w-7xl px-6 py-8">
 
         <div className="grid min-h-[620px] grid-cols-1 gap-8 lg:grid-cols-2">
 
           {/* LEFT MAP */}
-
-          <PakistanMap stage={stage} />
-
+          <PakistanMap
+            stage={stage}
+            province={locationResult?.province}
+            city={locationResult?.city}
+          />
 
           {/* RIGHT CONTENT */}
-
           <div className="flex flex-col justify-center">
 
             <div className="mb-7">
@@ -397,9 +417,7 @@ export default function AnalyzingPage() {
 
             </div>
 
-
             {/* Current AI action */}
-
             <div className="mb-7 rounded-2xl border border-[#5FAF5F]/30 bg-[#C8E6C9]/40 p-5">
 
               <div className="flex items-start gap-4">
@@ -434,9 +452,7 @@ export default function AnalyzingPage() {
 
             </div>
 
-
             {/* Progress */}
-
             <div className="mb-7">
 
               <div className="mb-2 flex justify-between">
@@ -464,13 +480,10 @@ export default function AnalyzingPage() {
 
             </div>
 
-
             {/* Timeline */}
-
             <div className="space-y-4">
 
               {stages.map((item, index) => {
-
                 const completed = index < stage;
                 const active = index === stage;
 
@@ -526,9 +539,7 @@ export default function AnalyzingPage() {
 
             </div>
 
-
             {/* Finished */}
-
             {stage === stages.length - 1 && (
 
               <div className="mt-7 flex items-center gap-3 rounded-xl bg-[#0D3B0D] px-5 py-4 text-white">

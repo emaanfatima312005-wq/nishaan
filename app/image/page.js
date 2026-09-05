@@ -2,11 +2,18 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiUploadCloud, FiImage, FiX, FiArrowRight } from "react-icons/fi";
+import { FiUploadCloud, FiImage, FiX, FiArrowRight, FiLoader } from "react-icons/fi";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+// Maximum dimension (long side) the compressed image will have.
+// GeoCLIP / StreetCLIP / CLIP models use 224-336px internally,
+// so 1600px preserves far more detail than they need while keeping
+// the base64 payload well below the 5MB mobile sessionStorage limit.
+const MAX_LONG_SIDE = 1600;
+const JPEG_QUALITY = 0.85;
 
 export default function ImageInputPage() {
   const router = useRouter();
@@ -16,12 +23,13 @@ const fileInputRef = useRef(null);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [compressing, setCompressing] = useState(false);
 
   // =====================================================
   // PROCESS FILE
   // =====================================================
 
-  const processFile = (selectedFile) => {
+  const processFile = async (selectedFile) => {
     setError("");
 
     if (!selectedFile) return;
@@ -38,15 +46,29 @@ const fileInputRef = useRef(null);
       return;
     }
 
-    setFile(selectedFile);
+    // Compress the image client-side so the base64 string stays well
+    // below the mobile sessionStorage limit (~5MB). Desktop browsers
+    // follow the same path — no behavioral difference, just a smaller
+    // payload and faster API calls.
+    setCompressing(true);
 
-    const reader = new FileReader();
+    try {
+      const compressedDataUrl = await compressImage(
+        selectedFile,
+        MAX_LONG_SIDE,
+        JPEG_QUALITY,
+      );
 
-    reader.onload = () => {
-      setPreview(reader.result);
-    };
-
-    reader.readAsDataURL(selectedFile);
+      setFile(selectedFile);
+      setPreview(compressedDataUrl);
+    } catch (err) {
+      console.error("Image compression failed:", err);
+      setError(
+        "Could not process the image. Please try a different file or a smaller photo.",
+      );
+    } finally {
+      setCompressing(false);
+    }
   };
 
   // =====================================================
@@ -111,7 +133,19 @@ const fileInputRef = useRef(null);
       data: preview,
     };
 
-    sessionStorage.setItem("nishaanImage", JSON.stringify(imageData));
+    // Guard against the mobile QuotaExceededError that previously
+    // froze the UI: a raw camera photo's base64 string can exceed
+    // the ~5MB sessionStorage limit on mobile browsers, throwing
+    // synchronously and skipping the navigation entirely.
+    try {
+      sessionStorage.setItem("nishaanImage", JSON.stringify(imageData));
+    } catch (err) {
+      console.error("sessionStorage write failed:", err);
+      setError(
+        "Could not store the image — please try a smaller photo or clear your browser data.",
+      );
+      return;
+    }
 
     router.push("/image/analyzing");
   };
@@ -402,6 +436,7 @@ const fileInputRef = useRef(null);
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
+              disabled={compressing}
               className="
                 rounded-lg
                 bg-[#0D3B0D]
@@ -414,9 +449,11 @@ const fileInputRef = useRef(null);
                 transition
                 hover:bg-[#2F6B2F]
                 active:scale-[0.98]
+                disabled:cursor-not-allowed
+                disabled:opacity-60
               "
             >
-              Choose File
+              {compressing ? "Processing…" : "Choose File"}
             </button>
 
             {/* Hidden File Input */}
@@ -585,6 +622,7 @@ const fileInputRef = useRef(null);
           <button
             type="button"
             onClick={continueToAnalysis}
+            disabled={compressing}
             className="
               mt-7
               flex
@@ -599,10 +637,21 @@ const fileInputRef = useRef(null);
               transition
               hover:bg-[#2F6B2F]
               active:scale-[0.98]
+              disabled:cursor-not-allowed
+              disabled:opacity-60
             "
           >
-            Analyze Image
-            <FiArrowRight />
+            {compressing ? (
+              <>
+                <FiLoader className="animate-spin" />
+                Processing…
+              </>
+            ) : (
+              <>
+                Analyze Image
+                <FiArrowRight />
+              </>
+            )}
           </button>
         )}
       </section>
@@ -672,4 +721,94 @@ function Line({ active = false }) {
       `}
     />
   );
+}
+
+/* ================================================= */
+/* CLIENT-SIDE IMAGE COMPRESSION                      */
+/* ================================================= */
+
+/**
+ * Resize and JPEG-compress an image file via the Canvas API.
+ *
+ * Mobile camera photos from modern phones are typically 4-15MB.
+ * Base64 encoding inflates them by ~33%, producing 5-20MB strings
+ * that exceed the ~5MB mobile sessionStorage limit and cause
+ * `sessionStorage.setItem` to throw `QuotaExceededError` — which
+ * is what froze the image analysis flow on phones.
+ *
+ * This helper scales the image down to `maxLongSide` pixels on
+ * its longest edge and exports it as JPEG at the given `quality`.
+ * GeoCLIP, StreetCLIP, and OpenAI CLIP all resize internally to
+ * 224-336px, so 1600px preserves far more detail than any model
+ * needs while keeping the resulting payload well under 2MB.
+ *
+ * @param {File} file  The original image file from the file input.
+ * @param {number} maxLongSide  Max pixel dimension on the long side.
+ * @param {number} quality  JPEG quality 0-1 passed to canvas.toBlob.
+ * @returns {Promise<string>} A `data:image/jpeg;base64,...` string.
+ */
+function compressImage(file, maxLongSide, quality) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      // Compute the scaled dimensions while preserving aspect ratio.
+      const { width: srcW, height: srcH } = img;
+      const longSide = Math.max(srcW, srcH);
+      const scale = longSide > maxLongSide ? maxLongSide / longSide : 1;
+      const dstW = Math.round(srcW * scale);
+      const dstH = Math.round(srcH * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = dstW;
+      canvas.height = dstH;
+
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        reject(new Error("Could not create canvas context"));
+        return;
+      }
+
+      // Use high-quality downscaling; browsers already apply a
+      // Lanczos-style filter when drawing to a smaller canvas.
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, dstW, dstH);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Canvas toBlob returned null"));
+            return;
+          }
+
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            if (typeof reader.result === "string") {
+              resolve(reader.result);
+            } else {
+              reject(new Error("FileReader returned non-string result"));
+            }
+          };
+
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        },
+        "image/jpeg",
+        quality,
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Image failed to load for compression"));
+    };
+
+    img.src = objectUrl;
+  });
 }

@@ -86,110 +86,49 @@ async def transcribe_audio(
 # URDU -> ROMAN URDU
 # ============================================================
 
-async def urdu_to_roman_urdu(
-    urdu_text: str,
-) -> str:
+
+async def urdu_to_roman_urdu(urdu_text: str) -> str:
     """
-    Convert native Urdu transcription into Roman Urdu.
-
-    This is transliteration, NOT translation.
-
-    Geographic names must be preserved.
+    Convert native Urdu transcription into Pakistani Roman Urdu.
+    This is transliteration, not translation.
     """
 
     if not urdu_text or not urdu_text.strip():
-        raise ValueError(
-            "Urdu transcription is empty."
-        )
+        raise ValueError("Urdu transcription is empty.")
 
     prompt = f"""
-You are Nishaan's Pakistani Roman Urdu transliteration system.
+Convert the following Urdu transcription into natural Pakistani
+Roman Urdu. Transliterate; do not translate into English.
 
-Convert the Urdu transcription below into NATURAL ROMAN URDU.
-
-THIS IS TRANSLITERATION, NOT TRANSLATION.
-
-You must preserve the spoken meaning and geographic names.
-
-IMPORTANT RULES:
-
-1. Do NOT translate Urdu into English.
-
-2. Write Urdu words using familiar Pakistani Roman Urdu.
-
-3. Preserve Pakistani:
-   - city names
-   - locality names
-   - area names
-   - town names
-   - street names
-   - gali names
-   - chowk names
-   - mohalla names
-   - mosque names
-   - market names
-   - house numbers
-
-4. Do not invent a place.
-
-5. Do not add information.
-
-6. Do not remove information.
-
-7. Keep numbers as numbers when they are already numeric.
-
-8. Urdu number words should remain meaningful in Roman Urdu.
+Preserve all spoken meaning and geographic names, including
+city, town, area, street, gali, chowk, mohalla, mosque and
+market names. Do not invent, omit, or add information.
 
 Examples:
+راولپنڈی -> Rawalpindi
+صادق آباد -> Sadiqabad
+مسلم ٹاؤن -> Muslim Town
+لال کرتی -> Lal Kurti
+ہاجی چوک -> Haji Chowk
+پانچ نمبر والی گلی -> paanch number wali gali
+گلی نمبر پانچ -> gali number paanch
+مکان نمبر 27 -> makan number 27
 
-راولپنڈی
--> Rawalpindi
+Return ONLY the Roman Urdu transcription, without explanations.
 
-صادق آباد
--> Sadiqabad
-
-مسلم ٹاؤن
--> Muslim Town
-
-لال کرتی
--> Lal Kurti
-
-ہاجی چوک
--> Haji Chowk
-
-ہاتھی چوک
--> Hathi Chowk
-
-پانچ نمبر والی گلی
--> paanch number wali gali
-
-گلی نمبر پانچ
--> gali number paanch
-
-مکان نمبر 27
--> makan number 27
-
-Do not explain anything.
-
-Return ONLY the Roman Urdu transcription.
-
-URDU TRANSCRIPTION:
-
+Urdu transcription:
 {urdu_text}
 """
 
     response = client.chat.completions.create(
         model="openai/gpt-oss-20b",
-
         messages=[
             {
                 "role": "system",
                 "content": (
-                    "You are a Pakistani Roman Urdu "
-                    "transliteration system. "
-                    "Transliterate only. "
-                    "Do not translate. "
-                    "Return only Roman Urdu."
+                    "Transliterate Urdu into Pakistani Roman Urdu. "
+                    "Do not translate or explain. Return only the "
+                    "transliterated text."
                 ),
             },
             {
@@ -197,21 +136,20 @@ URDU TRANSCRIPTION:
                 "content": prompt,
             },
         ],
-
         temperature=0,
-
-        max_completion_tokens=512,
-
+        max_completion_tokens=2048,
+        reasoning_effort="low",
         include_reasoning=False,
     )
 
-    roman_text = (
-        response.choices[0].message.content
-    )
+    choice = response.choices[0] if response.choices else None
+    roman_text = choice.message.content if choice else None
 
-    if not roman_text:
+    if not roman_text or not roman_text.strip():
+        finish_reason = choice.finish_reason if choice else "no_choice"
         raise ValueError(
-            "Roman Urdu conversion returned empty text."
+            "Roman Urdu conversion returned empty text. "
+            f"finish_reason={finish_reason}"
         )
 
     return roman_text.strip()

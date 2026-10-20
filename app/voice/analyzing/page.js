@@ -108,41 +108,63 @@ export default function VoiceAnalyzingPage() {
   // ANALYSIS PROGRESS
   // ===============================
 
-  useEffect(() => {
-    let pollId;
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev < steps.length - 1) {
-          return prev + 1;
+ 
+useEffect(() => {
+  let intervalId;
+  let navigationTimeoutId;
+  let pollId;
+  let cancelled = false;
+  let navigationStarted = false;
+
+  const navigateToOutput = () => {
+    if (cancelled || navigationStarted) return;
+
+    navigationStarted = true;
+    router.replace("/voice/output");
+  };
+
+  intervalId = setInterval(() => {
+    if (cancelled) return;
+
+    setCurrentStep((prev) => {
+      if (prev < steps.length - 1) {
+        return prev + 1;
+      }
+
+      clearInterval(intervalId);
+
+      navigationTimeoutId = setTimeout(() => {
+        if (cancelled) return;
+
+        if (apiDoneRef.current) {
+          navigateToOutput();
+          return;
         }
 
-        clearInterval(interval);
+        pollId = setInterval(() => {
+          if (cancelled) return;
 
-        // Animation done — wait for API
-        const waitAndNavigate = () => {
           if (apiDoneRef.current) {
-            router.push("/voice/output");
-          } else {
-            pollId = setInterval(() => {
-              if (apiDoneRef.current) {
-                clearInterval(pollId);
-                router.push("/voice/output");
-              }
-            }, 500);
+            clearInterval(pollId);
+            navigateToOutput();
           }
-        };
+        }, 500);
+      }, 1000);
 
-        setTimeout(waitAndNavigate, 1000);
+      return prev;
+    });
+  }, 1400);
 
-        return prev;
-      });
-    }, 1400);
+  return () => {
+    cancelled = true;
+    clearInterval(intervalId);
+    clearTimeout(navigationTimeoutId);
 
-    return () => {
-      clearInterval(interval);
-      if (pollId) clearInterval(pollId);
-    };
-  }, [router]);
+    if (pollId) {
+      clearInterval(pollId);
+    }
+  };
+}, [router]);
 
   // ===============================
   // AUTOMATIC SCROLL
